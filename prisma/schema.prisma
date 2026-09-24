@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  CONTRIBUTOR
+  READER
+}
+
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum Script {
+  PEGON
+  HANACARAKA
+}
+
+enum PageStatus {
+  UNTRANSLATED
+  IN_PROGRESS
+  REVIEW
+  PUBLISHED
+}
+
+enum AnnotationStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  password     String
+  role         Role         @default(READER)
+  status       UserStatus   @default(PENDING)
+  cvUrl        String?
+  expertise    String[]     @default([])
+  createdAt    DateTime     @default(now())
+  annotations  Annotation[]
+  reviews      Review[]
+}
+
+model Manuscript {
+  id          String   @id @default(cuid())
+  title       String
+  script      Script
+  year        String?
+  source      String?
+  description String?
+  createdAt   DateTime @default(now())
+  pages       Page[]
+}
+
+model Page {
+  id            String       @id @default(cuid())
+  manuscriptId  String
+  manuscript    Manuscript   @relation(fields: [manuscriptId], references: [id], onDelete: Cascade)
+  pageNumber    Int
+  imageUrl      String
+  width         Int
+  height        Int
+  status        PageStatus   @default(UNTRANSLATED)
+  createdAt     DateTime     @default(now())
+  annotations   Annotation[]
+
+  @@unique([manuscriptId, pageNumber])
+}
+
+model Annotation {
+  id              String           @id @default(cuid())
+  pageId          String
+  page            Page             @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  contributorId   String
+  contributor     User             @relation(fields: [contributorId], references: [id])
+  x               Float
+  y               Float
+  w               Float
+  h               Float
+  pegonText       String?
+  transliteration String
+  translation     String
+  notes           String?
+  status          AnnotationStatus @default(DRAFT)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  reviews         Review[]
+}
+
+model Review {
+  id            String           @id @default(cuid())
+  annotationId  String
+  annotation    Annotation       @relation(fields: [annotationId], references: [id], onDelete: Cascade)
+  reviewerId    String
+  reviewer      User             @relation(fields: [reviewerId], references: [id])
+  decision      AnnotationStatus
+  comment       String?
+  createdAt     DateTime         @default(now())
+}
