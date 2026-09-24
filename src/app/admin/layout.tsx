@@ -28,14 +28,17 @@ export default async function AdminLayout({
               >
                 Verifikasi Kontributor
               </Link>
+              <Link
+                href="/admin/naskah"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Naskah
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm">
             <span className="text-gray-600">{user.name}</span>
-            <Link
-              href="/dashboard"
-              className="text-blue-600 hover:underline"
-            >
+            <Link href="/dashboard" className="text-blue-600 hover:underline">
               Dashboard
             </Link>
           </div>
