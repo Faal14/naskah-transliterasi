@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   createAnnotation,
   deleteAnnotation,
@@ -41,6 +41,9 @@ export default function AnnotationCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [annotations, setAnnotations] =
     useState<Annotation[]>(initialAnnotations);
+    useEffect(() => {
+    setAnnotations(initialAnnotations);
+  }, [initialAnnotations]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null

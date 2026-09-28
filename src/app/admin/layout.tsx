@@ -33,6 +33,12 @@ export default async function AdminLayout({
                 className="text-gray-600 hover:text-gray-900"
               >
                 Naskah
+                </Link>
+              <Link
+                href="/admin/review"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Review Anotasi
               </Link>
             </nav>
           </div>
