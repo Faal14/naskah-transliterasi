@@ -35,6 +35,12 @@ export default async function KontributorLayout({
               >
                 Daftar Naskah
               </Link>
+              <Link
+                href="/kontributor/anotasi"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Anotasi Saya
+              </Link>
               {user.role === "ADMIN" && (
                 <Link
                   href="/admin"
