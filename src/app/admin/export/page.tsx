@@ -19,48 +19,49 @@ export default async function ExportPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Export Data</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Download data transliterasi &amp; terjemahan untuk keperluan riset,
-          analisis, atau lampiran laporan.
-        </p>
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-1 h-6 bg-teal-500 rounded"></div>
+        <h1 className="text-2xl font-bold text-blue-900">Export Data</h1>
       </div>
+      <p className="text-sm text-slate-600 mb-6 ml-4">
+        Download data transliterasi &amp; terjemahan untuk keperluan riset,
+        analisis, atau lampiran laporan.
+      </p>
 
       {/* Statistik */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 max-w-4xl">
-        <div className="bg-white border rounded-lg p-4">
-          <p className="text-xs text-gray-500">Total Anotasi</p>
-          <p className="text-2xl font-bold mt-1">{totalAnnotations}</p>
+        <div className="bg-white border border-sky-100 rounded-xl p-4 shadow-sm">
+          <p className="text-xs text-slate-500">Total Anotasi</p>
+          <p className="text-2xl font-bold mt-1 text-blue-900">{totalAnnotations}</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
           <p className="text-xs text-green-700">Approved</p>
           <p className="text-2xl font-bold mt-1 text-green-700">
             {approvedAnnotations}
           </p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 shadow-sm">
           <p className="text-xs text-yellow-700">Menunggu Review</p>
           <p className="text-2xl font-bold mt-1 text-yellow-700">
             {submittedAnnotations}
           </p>
         </div>
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-          <p className="text-xs text-gray-600">Draft</p>
-          <p className="text-2xl font-bold mt-1 text-gray-600">
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
+          <p className="text-xs text-slate-600">Draft</p>
+          <p className="text-2xl font-bold mt-1 text-slate-600">
             {draftAnnotations}
           </p>
         </div>
       </div>
 
       {/* Form Export */}
-      <div className="bg-white rounded-lg border p-6 max-w-2xl">
-        <h2 className="font-semibold text-lg mb-4">Buat File Export</h2>
+      <div className="bg-white rounded-xl border border-sky-100 p-6 max-w-2xl shadow-sm">
+        <h2 className="font-semibold text-lg mb-4 text-blue-900">Buat File Export</h2>
 
         <form action="/api/export" method="GET" className="space-y-5">
           {/* Format */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Format File
             </label>
             <div className="flex gap-4 flex-wrap">
@@ -70,11 +71,11 @@ export default async function ExportPage() {
                   name="format"
                   value="json"
                   defaultChecked
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-teal-600"
                 />
                 <span className="text-sm">
-                  <strong>JSON</strong>
-                  <span className="text-gray-500">
+                  <strong className="text-blue-900">JSON</strong>
+                  <span className="text-slate-500">
                     {" "}
                     — untuk pengolahan data lanjutan
                   </span>
@@ -85,11 +86,11 @@ export default async function ExportPage() {
                   type="radio"
                   name="format"
                   value="csv"
-                  className="w-4 h-4"
+                  className="w-4 h-4 accent-teal-600"
                 />
                 <span className="text-sm">
-                  <strong>CSV</strong>
-                  <span className="text-gray-500">
+                  <strong className="text-blue-900">CSV</strong>
+                  <span className="text-slate-500">
                     {" "}
                     — untuk Excel / Google Sheets
                   </span>
@@ -100,10 +101,12 @@ export default async function ExportPage() {
 
           {/* Naskah */}
           <div>
-            <label className="block text-sm font-medium mb-2">Naskah</label>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              Naskah
+            </label>
             <select
               name="manuscriptId"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
             >
               <option value="ALL">Semua Naskah</option>
               {manuscripts.map((m) => (
@@ -116,13 +119,13 @@ export default async function ExportPage() {
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-medium mb-2">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Status Anotasi
             </label>
             <select
               name="status"
               defaultValue="APPROVED"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
             >
               <option value="APPROVED">
                 Approved saja (rekomendasi untuk riset)
@@ -131,55 +134,27 @@ export default async function ExportPage() {
               <option value="SUBMITTED">Submitted saja</option>
               <option value="DRAFT">Draft saja</option>
             </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Untuk keperluan akademis, disarankan hanya export anotasi yang
-              sudah diverifikasi (Approved).
-            </p>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700"
+            className="w-full bg-gradient-to-r from-blue-800 to-blue-900 text-white py-2.5 rounded-lg font-medium hover:from-blue-900 hover:to-blue-950 shadow-md transition"
           >
             ⬇ Download File Export
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t text-xs text-gray-500 space-y-1">
+        <div className="mt-6 pt-6 border-t border-sky-100 text-xs text-slate-500 space-y-1">
           <p>
-            <strong>Isi file JSON:</strong> metadata naskah, koordinat kotak
-            (bounding box), transliterasi, terjemahan, teks asli, catatan
-            filologis, dan riwayat review.
+            <strong className="text-slate-700">Isi file JSON:</strong> metadata
+            naskah, koordinat kotak (bounding box), transliterasi, terjemahan,
+            teks asli, catatan filologis, dan riwayat review.
           </p>
           <p>
-            <strong>Isi file CSV:</strong> kolom lengkap siap diimpor ke
-            Excel/Sheets — cocok untuk lampiran laporan atau analisis
-            statistik.
+            <strong className="text-slate-700">Isi file CSV:</strong> kolom
+            lengkap siap diimpor ke Excel/Sheets.
           </p>
         </div>
-      </div>
-
-      {/* Info penggunaan */}
-      <div className="mt-8 max-w-2xl bg-blue-50 border border-blue-200 rounded-lg p-5 text-sm text-blue-900">
-        <p className="font-medium mb-2">💡 Contoh penggunaan</p>
-        <ul className="space-y-1 list-disc pl-5">
-          <li>
-            <strong>Riset filologi</strong>: analisis variasi transliterasi
-            antar kontributor
-          </li>
-          <li>
-            <strong>Dataset OCR</strong>: bounding box + label siap dilatih
-            model OCR
-          </li>
-          <li>
-            <strong>Lampiran skripsi/laporan</strong>: CSV untuk tabel
-            transliterasi
-          </li>
-          <li>
-            <strong>Arsip digital</strong>: JSON untuk backup data jangka
-            panjang
-          </li>
-        </ul>
       </div>
     </div>
   );
