@@ -46,6 +46,12 @@ export default async function AdminLayout({
               >
                 Data Demo
               </Link>
+              <Link
+                href="/admin/export"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Export Data
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm">
