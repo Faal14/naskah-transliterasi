@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const callbackUrl = searchParams.get("callbackUrl");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,14 +26,32 @@ function LoginForm() {
       redirect: false,
     });
 
-    setLoading(false);
-
     if (res?.error) {
+      setLoading(false);
       setError("Email atau password salah");
       return;
     }
 
-    router.push(callbackUrl);
+    // Ambil session untuk tahu role user
+    const session = await getSession();
+    const user = session?.user as any;
+    const role = user?.role;
+    const status = user?.status;
+
+    // Tentukan tujuan redirect
+    let target = "/dashboard";
+
+    if (callbackUrl && callbackUrl !== "/dashboard" && callbackUrl !== "/") {
+      // Kalau user diarahkan ke login dari halaman tertentu, balik ke situ
+      target = callbackUrl;
+    } else if (role === "ADMIN") {
+      target = "/admin";
+    } else if (role === "CONTRIBUTOR" && status === "APPROVED") {
+      target = "/kontributor";
+    }
+    // Reader / PENDING / REJECTED → tetap /dashboard (default)
+
+    router.push(target);
     router.refresh();
   }
 
@@ -86,8 +104,14 @@ function LoginForm() {
           </Link>
         </p>
 
-        <div className="mt-6 pt-6 border-t text-xs text-gray-500 text-center">
-          Demo admin: <code>admin@naskah.id</code> / <code>admin123</code>
+        <div className="mt-6 pt-6 border-t text-xs text-gray-500 text-center space-y-1">
+          <p className="font-medium text-gray-600 mb-1">Akun Demo:</p>
+          <p>
+            Admin: <code>admin@naskah.id</code> / <code>admin123</code>
+          </p>
+          <p>
+            Kontributor: <code>test@naskah.id</code> / <code>test123</code>
+          </p>
         </div>
       </div>
     </div>
