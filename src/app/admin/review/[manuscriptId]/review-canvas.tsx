@@ -110,7 +110,7 @@ export default function ReviewCanvas({
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Canvas area */}
       <div className="lg:col-span-2">
-        <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+        <div className="relative bg-sky-50 rounded-xl overflow-hidden border border-sky-100">
           <img
             src={imageUrl}
             alt="Naskah"
@@ -123,7 +123,7 @@ export default function ReviewCanvas({
               key={a.id}
               className={`absolute border-2 cursor-pointer transition-colors ${
                 selected?.id === a.id
-                  ? "border-blue-600 bg-blue-500/30 z-10"
+                  ? "border-blue-700 bg-blue-500/30 z-10"
                   : a.status === "APPROVED"
                     ? "border-green-500 bg-green-500/15"
                     : a.status === "REJECTED"
@@ -138,7 +138,7 @@ export default function ReviewCanvas({
               }}
               onClick={() => selectAnnotation(a)}
             >
-              <span className="absolute -top-5 left-0 text-xs bg-black/70 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
+              <span className="absolute -top-5 left-0 text-xs bg-blue-900/85 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
                 {a.transliteration.slice(0, 25)}
                 {a.transliteration.length > 25 ? "..." : ""}
               </span>
@@ -149,36 +149,41 @@ export default function ReviewCanvas({
         <div className="mt-4 flex gap-4 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 border-2 border-yellow-500 bg-yellow-500/20 rounded-sm" />
-            <span>Menunggu review ({submittedCount})</span>
+            <span className="text-slate-700">
+              Menunggu review ({submittedCount})
+            </span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 border-2 border-green-500 bg-green-500/15 rounded-sm" />
-            <span>Approved</span>
+            <span className="text-slate-700">Approved</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 border-2 border-red-500 bg-red-500/15 rounded-sm" />
-            <span>Rejected</span>
+            <span className="text-slate-700">Rejected</span>
           </div>
         </div>
       </div>
 
       {/* Review panel */}
       <div className="lg:col-span-1">
-        <div className="bg-white rounded-lg border p-5 sticky top-20">
+        <div className="bg-white rounded-xl border border-sky-100 p-5 sticky top-20 shadow-sm">
           {!selected ? (
             <>
-              <h2 className="font-semibold mb-2">Info Halaman</h2>
-              <p className="text-sm text-gray-600 mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-1 h-5 bg-teal-500 rounded"></div>
+                <h2 className="font-bold text-blue-900">Info Halaman</h2>
+              </div>
+              <p className="text-sm text-slate-600 mb-4">
                 {annotations.length} anotasi total · {submittedCount} menunggu
                 review
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 👈 Klik kotak di atas gambar untuk mulai review.
               </p>
 
               {submittedCount > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <p className="text-sm font-medium mb-3">
+                <div className="mt-6 pt-6 border-t border-sky-100">
+                  <p className="text-sm font-medium text-blue-900 mb-3">
                     Review semua ({submittedCount}) sekaligus:
                   </p>
                   <textarea
@@ -186,20 +191,20 @@ export default function ReviewCanvas({
                     onChange={(e) => setComment(e.target.value)}
                     placeholder="Komentar (opsional)"
                     rows={2}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent mb-3"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleReviewAll("APPROVED")}
                       disabled={saving}
-                      className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                      className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
                     >
                       Approve Semua
                     </button>
                     <button
                       onClick={() => handleReviewAll("REJECTED")}
                       disabled={saving}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                      className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
                     >
                       Reject Semua
                     </button>
@@ -210,10 +215,10 @@ export default function ReviewCanvas({
           ) : (
             <>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="font-semibold">Review Anotasi</h2>
+                <h2 className="font-bold text-blue-900">Review Anotasi</h2>
                 <button
                   onClick={() => setSelected(null)}
-                  className="text-xs text-gray-500 hover:underline"
+                  className="text-xs text-slate-500 hover:text-teal-700 hover:underline"
                 >
                   Tutup
                 </button>
@@ -221,7 +226,7 @@ export default function ReviewCanvas({
 
               <div className="mb-3">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
                     selected.status === "APPROVED"
                       ? "bg-green-100 text-green-700"
                       : selected.status === "REJECTED"
@@ -235,46 +240,52 @@ export default function ReviewCanvas({
 
               <div className="space-y-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">Kontributor</p>
-                  <p className="font-medium">{selected.contributorName}</p>
+                  <p className="text-xs text-slate-500 mb-0.5">Kontributor</p>
+                  <p className="font-medium text-blue-900">
+                    {selected.contributorName}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">
+                  <p className="text-xs text-slate-500 mb-0.5">
                     Transliterasi Latin
                   </p>
-                  <p className="font-medium">{selected.transliteration}</p>
+                  <p className="font-medium text-blue-900">
+                    {selected.transliteration}
+                  </p>
                 </div>
 
                 <div>
-                  <p className="text-xs text-gray-500 mb-0.5">
+                  <p className="text-xs text-slate-500 mb-0.5">
                     Terjemahan Indonesia
                   </p>
-                  <p>{selected.translation}</p>
+                  <p className="text-slate-700">{selected.translation}</p>
                 </div>
 
                 {selected.pegonText && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
+                    <p className="text-xs text-slate-500 mb-0.5">
                       Teks Asli
                     </p>
-                    <p className="font-mono text-sm">{selected.pegonText}</p>
+                    <p className="font-mono text-sm text-blue-900">
+                      {selected.pegonText}
+                    </p>
                   </div>
                 )}
 
                 {selected.notes && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">
+                    <p className="text-xs text-slate-500 mb-0.5">
                       Catatan Filologis
                     </p>
-                    <p className="text-gray-700 italic">{selected.notes}</p>
+                    <p className="text-slate-600 italic">{selected.notes}</p>
                   </div>
                 )}
               </div>
 
               {selected.status === "SUBMITTED" && (
-                <div className="mt-5 pt-5 border-t">
-                  <label className="block text-xs font-medium mb-1">
+                <div className="mt-5 pt-5 border-t border-sky-100">
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
                     Komentar (opsional)
                   </label>
                   <textarea
@@ -282,7 +293,7 @@ export default function ReviewCanvas({
                     onChange={(e) => setComment(e.target.value)}
                     rows={3}
                     placeholder="Cth: transliterasi tepat, terjemahan sesuai konteks..."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
                   />
 
                   {error && (
@@ -293,14 +304,14 @@ export default function ReviewCanvas({
                     <button
                       onClick={() => handleReview("APPROVED")}
                       disabled={saving}
-                      className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+                      className="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition"
                     >
                       {saving ? "..." : "✓ Approve"}
                     </button>
                     <button
                       onClick={() => handleReview("REJECTED")}
                       disabled={saving}
-                      className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50"
+                      className="flex-1 bg-red-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition"
                     >
                       {saving ? "..." : "✕ Reject"}
                     </button>
@@ -309,13 +320,15 @@ export default function ReviewCanvas({
               )}
 
               {selected.reviews.length > 0 && (
-                <div className="mt-5 pt-5 border-t">
-                  <p className="text-xs font-medium mb-2">Riwayat Review</p>
+                <div className="mt-5 pt-5 border-t border-sky-100">
+                  <p className="text-xs font-medium text-slate-700 mb-2">
+                    Riwayat Review
+                  </p>
                   <div className="space-y-2">
                     {selected.reviews.map((r) => (
                       <div
                         key={r.id}
-                        className="text-xs bg-gray-50 rounded p-2"
+                        className="text-xs bg-sky-50 border border-sky-100 rounded p-2"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span
@@ -327,12 +340,12 @@ export default function ReviewCanvas({
                           >
                             {r.decision}
                           </span>
-                          <span className="text-gray-500">
+                          <span className="text-slate-500">
                             {r.reviewerName}
                           </span>
                         </div>
                         {r.comment && (
-                          <p className="text-gray-600">{r.comment}</p>
+                          <p className="text-slate-600">{r.comment}</p>
                         )}
                       </div>
                     ))}

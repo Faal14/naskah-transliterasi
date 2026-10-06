@@ -41,9 +41,6 @@ export default function AnnotationCanvas({
   const containerRef = useRef<HTMLDivElement>(null);
   const [annotations, setAnnotations] =
     useState<Annotation[]>(initialAnnotations);
-    useEffect(() => {
-    setAnnotations(initialAnnotations);
-  }, [initialAnnotations]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(
     null
@@ -52,6 +49,11 @@ export default function AnnotationCanvas({
   const [formMode, setFormMode] = useState<"new" | "edit" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Sync state ketika initialAnnotations berubah (setelah router.refresh)
+  useEffect(() => {
+    setAnnotations(initialAnnotations);
+  }, [initialAnnotations]);
 
   function getRelativePos(clientX: number, clientY: number) {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -84,7 +86,6 @@ export default function AnnotationCanvas({
   function handlePointerUp() {
     if (!startPos || !draft) return;
 
-    // Kalau kotak terlalu kecil, abaikan
     if (draft.w < 0.01 || draft.h < 0.01) {
       setDraft(null);
       setStartPos(null);
@@ -197,8 +198,11 @@ export default function AnnotationCanvas({
     <div className="space-y-3">
       <div
         ref={containerRef}
-        className="relative bg-gray-100 rounded-lg overflow-hidden select-none"
-        style={{ touchAction: "none", cursor: formMode ? "default" : "crosshair" }}
+        className="relative bg-sky-50 rounded-xl overflow-hidden select-none border border-sky-100"
+        style={{
+          touchAction: "none",
+          cursor: formMode ? "default" : "crosshair",
+        }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -216,12 +220,14 @@ export default function AnnotationCanvas({
             key={a.id}
             className={`absolute border-2 transition-colors ${
               selected?.id === a.id
-                ? "border-blue-600 bg-blue-500/20"
+                ? "border-blue-700 bg-blue-500/20"
                 : a.status === "APPROVED"
                   ? "border-green-500 bg-green-500/10"
                   : a.status === "SUBMITTED"
                     ? "border-yellow-500 bg-yellow-500/10"
-                    : "border-blue-500 bg-blue-500/10"
+                    : a.status === "REJECTED"
+                      ? "border-red-500 bg-red-500/10"
+                      : "border-teal-500 bg-teal-500/10"
             }`}
             style={{
               left: `${a.x * 100}%`,
@@ -234,7 +240,7 @@ export default function AnnotationCanvas({
               handleSelectAnnotation(a);
             }}
           >
-            <span className="absolute -top-5 left-0 text-xs bg-black/70 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
+            <span className="absolute -top-5 left-0 text-xs bg-blue-900/85 text-white px-1.5 py-0.5 rounded whitespace-nowrap">
               {a.transliteration.slice(0, 20)}
               {a.transliteration.length > 20 ? "..." : ""}
             </span>
@@ -257,12 +263,13 @@ export default function AnnotationCanvas({
 
       {/* Form popup */}
       {formMode && (
-        <div className="bg-white border rounded-lg p-4 shadow-lg">
-          <h3 className="font-semibold mb-3">
-            {formMode === "new"
-              ? "Anotasi Baru"
-              : "Edit Anotasi"}
-          </h3>
+        <div className="bg-white border border-sky-100 rounded-xl p-5 shadow-md">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-1 h-5 bg-teal-500 rounded"></div>
+            <h3 className="font-bold text-blue-900">
+              {formMode === "new" ? "Anotasi Baru" : "Edit Anotasi"}
+            </h3>
+          </div>
 
           <AnnotationForm
             initial={
@@ -284,7 +291,7 @@ export default function AnnotationCanvas({
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-slate-500">
         💡 Drag di atas gambar untuk membuat kotak baru. Klik kotak yang sudah
         ada untuk mengedit.
       </p>
@@ -333,8 +340,8 @@ function AnnotationForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Transliterasi Latin *
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Transliterasi Latin <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
@@ -343,13 +350,13 @@ function AnnotationForm({
           required
           autoFocus
           placeholder="cth: sang nata..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Terjemahan Indonesia *
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Terjemahan Indonesia <span className="text-red-500">*</span>
         </label>
         <textarea
           value={translation}
@@ -357,33 +364,35 @@ function AnnotationForm({
           required
           rows={2}
           placeholder="cth: sang raja..."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Teks Asli (opsional)
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Teks Asli{" "}
+          <span className="text-slate-400 font-normal">(opsional)</span>
         </label>
         <input
           type="text"
           value={pegonText}
           onChange={(e) => setPegonText(e.target.value)}
           placeholder="Teks Pegon/Hanacaraka jika ada"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">
-          Catatan Filologis (opsional)
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Catatan Filologis{" "}
+          <span className="text-slate-400 font-normal">(opsional)</span>
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={2}
           placeholder="Varian bacaan, tafsir ganda, dll."
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
@@ -393,14 +402,14 @@ function AnnotationForm({
         <button
           type="submit"
           disabled={saving}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-900 hover:to-blue-950 disabled:opacity-50 shadow-md transition"
         >
           {saving ? "Menyimpan..." : "Simpan"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 rounded-lg text-sm border border-gray-300 hover:bg-gray-50"
+          className="px-4 py-2 rounded-lg text-sm border border-slate-300 text-slate-700 hover:bg-slate-50 transition font-medium"
         >
           Batal
         </button>
@@ -409,7 +418,7 @@ function AnnotationForm({
             type="button"
             onClick={onDelete}
             disabled={saving}
-            className="ml-auto px-4 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+            className="ml-auto px-4 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 transition font-medium"
           >
             Hapus
           </button>

@@ -40,7 +40,7 @@ export default function SubmitButton({
     <button
       onClick={handleSubmit}
       disabled={loading || annotationCount === 0}
-      className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="px-3 py-1.5 text-sm bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-md transition font-medium"
     >
       {loading ? "Mengirim..." : `Submit untuk Review (${annotationCount})`}
     </button>

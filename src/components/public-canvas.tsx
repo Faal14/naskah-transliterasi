@@ -61,20 +61,20 @@ export default function PublicCanvas({
             onClick={() => setShowBoxes(!showBoxes)}
             className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
               showBoxes
-                ? "bg-blue-600 text-white border-blue-600"
-                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                ? "bg-blue-900 text-white border-blue-900 shadow-md"
+                : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
             }`}
           >
             {showBoxes ? "👁 Sembunyikan Kotak" : "👁 Tampilkan Kotak"}
           </button>
-          <span className="text-gray-500 text-xs">
+          <span className="text-slate-500 text-xs">
             {annotations.length} anotasi terverifikasi
           </span>
         </div>
         {selected && (
           <button
             onClick={() => setSelected(null)}
-            className="text-xs text-gray-500 hover:underline"
+            className="text-xs text-slate-500 hover:text-teal-700 hover:underline"
           >
             Tutup panel detail
           </button>
@@ -82,7 +82,7 @@ export default function PublicCanvas({
       </div>
 
       {/* Canvas */}
-      <div className="relative bg-gray-100 rounded-lg overflow-hidden">
+      <div className="relative bg-sky-50 rounded-xl overflow-hidden border border-sky-100">
         <img
           src={imageUrl}
           alt="Naskah"
@@ -96,10 +96,10 @@ export default function PublicCanvas({
               key={a.id}
               className={`absolute border-2 transition-all cursor-pointer ${
                 selected?.id === a.id
-                  ? "border-blue-600 bg-blue-500/30 z-20"
+                  ? "border-blue-700 bg-blue-500/30 z-20"
                   : hovered?.id === a.id
-                    ? "border-blue-500 bg-blue-500/20 z-10"
-                    : "border-green-500 bg-green-500/10 hover:bg-green-500/20"
+                    ? "border-teal-500 bg-teal-500/20 z-10"
+                    : "border-teal-500 bg-teal-500/10 hover:bg-teal-500/20"
               }`}
               style={{
                 left: `${a.x * 100}%`,
@@ -117,65 +117,70 @@ export default function PublicCanvas({
         {/* Tooltip on hover */}
         {hovered && tooltipPos && !selected && (
           <div
-            className="absolute z-30 pointer-events-none bg-black/90 text-white px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
+            className="absolute z-30 pointer-events-none bg-blue-900/95 text-white px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
             style={{
               left: Math.min(tooltipPos.x + 15, 9999),
               top: tooltipPos.y + 15,
             }}
           >
             <p className="font-medium">{hovered.transliteration}</p>
-            <p className="text-xs text-gray-300 mt-1">
-              {hovered.translation}
-            </p>
+            <p className="text-xs text-sky-200 mt-1">{hovered.translation}</p>
           </div>
         )}
       </div>
 
       {/* Detail panel */}
       {selected && (
-        <div className="bg-white border rounded-lg p-5">
+        <div className="bg-white border border-sky-100 rounded-xl p-5 shadow-md">
           <div className="flex items-start justify-between mb-3">
-            <h3 className="font-semibold">Detail Anotasi</h3>
-            <span className="text-xs text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-5 bg-teal-500 rounded"></div>
+              <h3 className="font-bold text-blue-900">Detail Anotasi</h3>
+            </div>
+            <span className="text-xs text-slate-500">
               oleh {selected.contributorName}
             </span>
           </div>
 
           <div className="space-y-3 text-sm">
             <div>
-              <p className="text-xs text-gray-500 mb-0.5">
+              <p className="text-xs text-slate-500 mb-0.5">
                 Transliterasi Latin
               </p>
-              <p className="font-medium text-lg">{selected.transliteration}</p>
+              <p className="font-medium text-lg text-blue-900">
+                {selected.transliteration}
+              </p>
             </div>
 
             <div>
-              <p className="text-xs text-gray-500 mb-0.5">
+              <p className="text-xs text-slate-500 mb-0.5">
                 Terjemahan Indonesia
               </p>
-              <p>{selected.translation}</p>
+              <p className="text-slate-700">{selected.translation}</p>
             </div>
 
             {selected.pegonText && (
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">Teks Asli</p>
-                <p className="font-mono">{selected.pegonText}</p>
+                <p className="text-xs text-slate-500 mb-0.5">Teks Asli</p>
+                <p className="font-mono text-blue-900">
+                  {selected.pegonText}
+                </p>
               </div>
             )}
 
             {selected.notes && (
               <div>
-                <p className="text-xs text-gray-500 mb-0.5">
+                <p className="text-xs text-slate-500 mb-0.5">
                   Catatan Filologis
                 </p>
-                <p className="text-gray-700 italic">{selected.notes}</p>
+                <p className="text-slate-600 italic">{selected.notes}</p>
               </div>
             )}
           </div>
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
+      <p className="text-xs text-slate-500">
         💡 Arahkan kursor ke kotak untuk melihat transliterasi. Klik kotak untuk
         detail lengkap.
       </p>

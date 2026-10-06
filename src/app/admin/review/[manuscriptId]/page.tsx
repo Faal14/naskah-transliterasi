@@ -85,15 +85,26 @@ export default async function ReviewManuscriptPage({
       <div className="mb-4">
         <Link
           href="/admin/review"
-          className="text-sm text-gray-600 hover:underline"
+          className="text-sm text-slate-600 hover:text-teal-700 hover:underline transition"
         >
           ← Daftar Review
         </Link>
         <div className="flex items-center justify-between mt-2 flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold">{manuscript.title}</h1>
-            <div className="flex gap-3 mt-1 text-sm text-gray-600 items-center">
-              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-teal-500 rounded"></div>
+              <h1 className="text-xl font-bold text-blue-900">
+                {manuscript.title}
+              </h1>
+            </div>
+            <div className="flex gap-3 mt-2 text-sm text-slate-600 items-center ml-4">
+              <span
+                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                  manuscript.script === "PEGON"
+                    ? "bg-blue-100 text-blue-800"
+                    : "bg-teal-100 text-teal-800"
+                }`}
+              >
                 {manuscript.script}
               </span>
               <span>
@@ -116,24 +127,24 @@ export default async function ReviewManuscriptPage({
             {prevPage ? (
               <Link
                 href={`/admin/review/${manuscriptId}?p=${prevPage}`}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-3 py-1.5 text-sm bg-white border border-sky-200 rounded-lg hover:bg-sky-50 hover:border-teal-400 transition text-blue-900"
               >
                 ← Sebelumnya
               </Link>
             ) : (
-              <span className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-300">
+              <span className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-300 bg-white">
                 ← Sebelumnya
               </span>
             )}
             {nextPage ? (
               <Link
                 href={`/admin/review/${manuscriptId}?p=${nextPage}`}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                className="px-3 py-1.5 text-sm bg-white border border-sky-200 rounded-lg hover:bg-sky-50 hover:border-teal-400 transition text-blue-900"
               >
                 Berikutnya →
               </Link>
             ) : (
-              <span className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg text-gray-300">
+              <span className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-300 bg-white">
                 Berikutnya →
               </span>
             )}
