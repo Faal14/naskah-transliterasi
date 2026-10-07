@@ -96,23 +96,6 @@ Buka http://localhost:3000
 
 ---
 
-## 📁 Struktur Proyek
-
-```
-src/
-├── app/
-│   ├── (auth)/            # Login & Register
-│   ├── admin/             # Panel admin
-│   │   ├── kontributor/   # Verifikasi kontributor
-│   │   ├── naskah/        # Upload & kelola naskah
-│   │   └── review/        # Review anotasi
-│   ├── kontributor/       # Ruang kerja kontributor
-│   ├── naskah/[id]/       # Viewer publik
-│   └── dashboard/         # Dashboard user
-├── components/            # Komponen reusable
-├── lib/                   # Utility (prisma, supabase, validators)
-├── types/                 # Type definitions
-└── auth.ts                # Konfigurasi Auth.js
 ```
 
 ---
@@ -138,7 +121,7 @@ src/
 
 | Nama | Peran |
 |---|---|
-| Faaliq Assalam | Desain Web |
+| Faaliq | Desain Web |
 | Enjela | Database Manajemen |
 | Alfri | Flowchart Sistem |
 | Habibah | Analis Naskah Jawa (Hanacaraka) |
