@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createManuscript } from "../actions";
+import { COMMON_SCRIPTS } from "@/lib/script-label";
 
 async function getImageDimensions(
   file: File
@@ -18,6 +19,7 @@ async function getImageDimensions(
 export default function NewManuscriptPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,6 +35,10 @@ export default function NewManuscriptPage() {
       setError("Pilih minimal 1 gambar halaman");
       return;
     }
+    if (!script.trim()) {
+      setError("Aksara wajib diisi");
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -40,6 +46,7 @@ export default function NewManuscriptPage() {
     const formData = new FormData(e.currentTarget);
     const dims = await Promise.all(files.map(getImageDimensions));
     formData.set("dimensions", JSON.stringify(dims));
+    formData.set("script", script);
 
     const result = await createManuscript(formData);
 
@@ -82,19 +89,46 @@ export default function NewManuscriptPage() {
           />
         </div>
 
+        {/* Aksara — input bebas dengan saran */}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">
             Aksara <span className="text-red-500">*</span>
           </label>
-          <select
-            name="script"
+          <input
+            type="text"
+            value={script}
+            onChange={(e) => setScript(e.target.value)}
             required
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-          >
-            <option value="">-- Pilih aksara --</option>
-            <option value="PEGON">Pegon</option>
-            <option value="HANACARAKA">Hanacaraka</option>
-          </select>
+            placeholder="cth: Pegon, Carakan, Jawi, Bali..."
+            list="common-scripts"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+          />
+          <datalist id="common-scripts">
+            {COMMON_SCRIPTS.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
+          <p className="text-xs text-slate-500 mt-1">
+            Bebas isi aksara apa saja. Saran: klik kolom untuk lihat pilihan umum.
+          </p>
+
+          {/* Quick-pick chips */}
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {COMMON_SCRIPTS.slice(0, 6).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setScript(s)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                  script === s
+                    ? "bg-teal-600 text-white"
+                    : "bg-sky-50 text-slate-700 hover:bg-sky-100 border border-sky-200"
+                }`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -147,8 +181,7 @@ export default function NewManuscriptPage() {
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
           />
           <p className="text-xs text-slate-500 mt-1">
-            Urutan file = urutan halaman. Disarankan nama file urut (01.jpg,
-            02.jpg, ...)
+            Urutan file = urutan halaman.
           </p>
         </div>
 

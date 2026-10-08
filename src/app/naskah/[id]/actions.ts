@@ -57,25 +57,7 @@ export async function updateAnnotation(
     pegonText?: string;
   }
 ) {
-  const user = await checkAuth();
-
-  // Ambil anotasi dulu untuk cek ownership
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
-  if (!existing) throw new Error("Anotasi tidak ditemukan");
-
-  // Hanya owner atau admin yang bisa edit
-  if (existing.contributorId !== user.id && user.role !== "ADMIN") {
-    throw new Error("Anda tidak berhak mengedit anotasi ini");
-  }
-
-  // Kalau anotasi sudah SUBMITTED / APPROVED, reset ke DRAFT
-  // supaya admin review ulang setelah diedit
-  const newStatus =
-    existing.status === "SUBMITTED" || existing.status === "APPROVED"
-      ? "DRAFT"
-      : existing.status;
+  await checkAuth();
 
   await prisma.annotation.update({
     where: { id },
@@ -84,33 +66,15 @@ export async function updateAnnotation(
       translation: data.translation,
       notes: data.notes || null,
       pegonText: data.pegonText || null,
-      status: newStatus,
     },
   });
 
   revalidatePath(`/kontributor/naskah`);
-  return { success: true, newStatus };
+  return { success: true };
 }
 
 export async function deleteAnnotation(id: string) {
-  const user = await checkAuth();
-
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
-  if (!existing) throw new Error("Anotasi tidak ditemukan");
-
-  // Hanya owner atau admin yang bisa hapus
-  if (existing.contributorId !== user.id && user.role !== "ADMIN") {
-    throw new Error("Anda tidak berhak menghapus anotasi ini");
-  }
-
-  // Jangan izinkan hapus anotasi yang sudah APPROVED (harus kontak admin)
-  if (existing.status === "APPROVED") {
-    throw new Error(
-      "Anotasi yang sudah disetujui tidak bisa dihapus. Hubungi admin."
-    );
-  }
+  await checkAuth();
 
   await prisma.annotation.delete({ where: { id } });
 

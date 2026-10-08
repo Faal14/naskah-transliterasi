@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { formatScript } from "@/lib/script-label";
 
 export default async function KontributorHome() {
   const manuscripts = await prisma.manuscript.findMany({
@@ -15,14 +16,14 @@ export default async function KontributorHome() {
     <div>
       <div className="flex items-center gap-3 mb-2">
         <div className="w-1 h-6 bg-teal-500 rounded"></div>
-        <h1 className="text-2xl font-bold text-slate-900">Daftar Naskah</h1>
+        <h1 className="text-2xl font-bold text-blue-900">Daftar Naskah</h1>
       </div>
-      <p className="text-sm text-slate-700 mb-6 ml-4">
+      <p className="text-sm text-slate-600 mb-6 ml-4">
         Pilih naskah untuk mulai membuat anotasi transliterasi dan terjemahan.
       </p>
 
       {manuscripts.length === 0 ? (
-        <div className="bg-white rounded-xl border border-sky-100 p-12 text-center text-slate-600 shadow-sm">
+        <div className="bg-white rounded-xl border border-sky-100 p-12 text-center text-slate-500 shadow-sm">
           Belum ada naskah yang tersedia.
         </div>
       ) : (
@@ -54,7 +55,7 @@ export default async function KontributorHome() {
                         : "bg-teal-100 text-teal-800"
                     }`}
                   >
-                    {m.script}
+                    {formatScript(m.script)}
                   </span>
                 </div>
 

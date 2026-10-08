@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import PublicCanvas from "@/components/public-canvas";
+import { formatScript } from "@/lib/script-label";
 
 export default async function PublicManuscriptPage({
   params,
@@ -149,13 +150,13 @@ export default async function PublicManuscriptPage({
                     : "bg-teal-100 text-teal-800"
                 }`}
               >
-                {manuscript.script}
+                {formatScript(manuscript.script)}
               </span>
               {manuscript.year && <span>Tahun: {manuscript.year}</span>}
               {manuscript.source && <span>Sumber: {manuscript.source}</span>}
               <span>·</span>
               <span className="font-medium text-teal-700">
-                {totalApprovedInManuscript} anotasi terverifikasi
+                {totalApprovedInManuscript} kata terverifikasi
               </span>
             </div>
 
@@ -212,7 +213,7 @@ export default async function PublicManuscriptPage({
                 draggable={false}
               />
               <div className="p-4 text-center text-sm text-slate-500 bg-sky-50 border-t border-sky-100">
-                Belum ada anotasi yang diverifikasi untuk halaman ini.
+                Belum ada transliterasi yang diverifikasi untuk halaman ini.
               </div>
             </div>
           ) : (

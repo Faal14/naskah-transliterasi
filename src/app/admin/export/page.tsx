@@ -6,7 +6,6 @@ export default async function ExportPage() {
     select: { id: true, title: true, script: true },
   });
 
-  const totalAnnotations = await prisma.annotation.count();
   const approvedAnnotations = await prisma.annotation.count({
     where: { status: "APPROVED" },
   });
@@ -29,11 +28,7 @@ export default async function ExportPage() {
       </p>
 
       {/* Statistik */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 max-w-4xl">
-        <div className="bg-white border border-sky-100 rounded-xl p-4 shadow-sm">
-          <p className="text-xs text-slate-500">Total Anotasi</p>
-          <p className="text-2xl font-bold mt-1 text-blue-900">{totalAnnotations}</p>
-        </div>
+      <div className="grid grid-cols-3 gap-3 mb-8 max-w-4xl">
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
           <p className="text-xs text-green-700">Approved</p>
           <p className="text-2xl font-bold mt-1 text-green-700">
@@ -56,10 +51,11 @@ export default async function ExportPage() {
 
       {/* Form Export */}
       <div className="bg-white rounded-xl border border-sky-100 p-6 max-w-2xl shadow-sm">
-        <h2 className="font-semibold text-lg mb-4 text-blue-900">Buat File Export</h2>
+        <h2 className="font-semibold text-lg mb-4 text-blue-900">
+          Buat File Export
+        </h2>
 
         <form action="/api/export" method="GET" className="space-y-5">
-          {/* Format */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Format File
@@ -99,7 +95,6 @@ export default async function ExportPage() {
             </div>
           </div>
 
-          {/* Naskah */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Naskah
@@ -117,7 +112,6 @@ export default async function ExportPage() {
             </select>
           </div>
 
-          {/* Status */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">
               Status Anotasi

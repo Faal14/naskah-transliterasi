@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { formatScript } from "@/lib/script-label";
 
 export default async function NaskahListPage() {
   const manuscripts = await prisma.manuscript.findMany({
@@ -37,17 +38,32 @@ export default async function NaskahListPage() {
           <table className="w-full text-sm">
             <thead className="bg-sky-50 border-b border-sky-100">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Judul</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Aksara</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Tahun</th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">Halaman</th>
-                <th className="text-right px-4 py-3 font-medium text-slate-600">Aksi</th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  Judul
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  Aksara
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  Tahun
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  Halaman
+                </th>
+                <th className="text-right px-4 py-3 font-medium text-slate-600">
+                  Aksi
+                </th>
               </tr>
             </thead>
             <tbody>
               {manuscripts.map((m) => (
-                <tr key={m.id} className="border-b border-sky-50 last:border-0">
-                  <td className="px-4 py-3 font-medium text-blue-900">{m.title}</td>
+                <tr
+                  key={m.id}
+                  className="border-b border-sky-50 last:border-0"
+                >
+                  <td className="px-4 py-3 font-medium text-blue-900">
+                    {m.title}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -56,11 +72,15 @@ export default async function NaskahListPage() {
                           : "bg-teal-100 text-teal-800"
                       }`}
                     >
-                      {m.script}
+                      {formatScript(m.script)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-slate-600">{m.year || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{m._count.pages}</td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {m.year || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {m._count.pages}
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/admin/naskah/${m.id}`}

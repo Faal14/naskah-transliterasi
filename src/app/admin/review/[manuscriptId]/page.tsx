@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReviewCanvas from "./review-canvas";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function ReviewManuscriptPage({
   params,
@@ -99,13 +100,11 @@ export default async function ReviewManuscriptPage({
             </div>
             <div className="flex gap-3 mt-2 text-sm text-slate-600 items-center ml-4">
               <span
-                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  manuscript.script === "PEGON"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-teal-100 text-teal-800"
-                }`}
+                className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                  manuscript.script
+                )}`}
               >
-                {manuscript.script}
+                {formatScript(manuscript.script)}
               </span>
               <span>
                 Halaman {pageNum} dari {totalPages}

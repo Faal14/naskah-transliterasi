@@ -47,6 +47,12 @@ export default async function KontributorLayout({
               >
                 Anotasi Saya
               </Link>
+              <Link
+                href="/kontributor/profil"
+                className="text-sky-100 hover:text-white transition font-medium"
+              >
+                Profil
+              </Link>
               {user.role === "ADMIN" && (
                 <Link
                   href="/admin"
@@ -58,7 +64,12 @@ export default async function KontributorLayout({
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <span className="text-sky-100">{user.name}</span>
+            <Link
+              href="/kontributor/profil"
+              className="text-sky-100 hover:text-white transition font-medium"
+            >
+              {user.name}
+            </Link>
             <Link
               href="/dashboard"
               className="bg-blue-800 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition font-medium border border-blue-700"

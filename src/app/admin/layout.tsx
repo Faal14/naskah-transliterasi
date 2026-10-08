@@ -18,14 +18,14 @@ export default async function AdminLayout({
       <header className="bg-blue-900 shadow-lg sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link
-              href="/admin"
-              className="font-bold text-lg text-white flex items-center gap-2"
-            >
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-teal-500 text-xs">
-                ⚙️
+            <Link href="/" className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-teal-500 text-white font-bold text-sm">
+                L
               </span>
-              Admin Panel
+              <span className="font-bold text-white text-lg tracking-wide">
+                LONTAR
+              </span>
+              <span className="text-xs text-sky-300 ml-1">· Admin</span>
             </Link>
             <nav className="flex gap-4 text-sm">
               <Link
@@ -45,12 +45,6 @@ export default async function AdminLayout({
                 className="text-sky-100 hover:text-white transition font-medium"
               >
                 Review Anotasi
-              </Link>
-              <Link
-                href="/admin/demo"
-                className="text-sky-100 hover:text-white transition font-medium"
-              >
-                Data Demo
               </Link>
               <Link
                 href="/admin/export"

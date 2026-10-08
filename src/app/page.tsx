@@ -1,24 +1,50 @@
 import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { auth } from "@/auth";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function HomePage() {
   const session = await auth();
   const user = session?.user as any;
 
-  const manuscripts = await prisma.manuscript.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      pages: {
-        include: {
-          annotations: {
-            where: { status: "APPROVED" },
-            select: { id: true },
+  const [manuscripts, totalContributors] = await Promise.all([
+    prisma.manuscript.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        pages: {
+          orderBy: { pageNumber: "asc" },
+          include: {
+            annotations: {
+              where: { status: "APPROVED" },
+              select: { id: true },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.user.count({
+      where: { role: "CONTRIBUTOR", status: "APPROVED" },
+    }),
+  ]);
+
+  const firstPagePaths = manuscripts
+    .map((m) => m.pages[0]?.imageUrl)
+    .filter((p): p is string => !!p);
+
+  const signedUrlMap: Record<string, string> = {};
+  if (firstPagePaths.length > 0) {
+    const { data } = await supabaseAdmin.storage
+      .from("manuscripts")
+      .createSignedUrls(firstPagePaths, 3600);
+    if (data) {
+      data.forEach((item) => {
+        if (item.signedUrl && item.path) {
+          signedUrlMap[item.path] = item.signedUrl;
+        }
+      });
+    }
+  }
 
   const manuscriptsWithStats = manuscripts.map((m) => {
     const totalApproved = m.pages.reduce(
@@ -28,9 +54,13 @@ export default async function HomePage() {
     const publishedPages = m.pages.filter(
       (p) => p.status === "PUBLISHED"
     ).length;
+    const firstPageUrl = m.pages[0]?.imageUrl
+      ? signedUrlMap[m.pages[0].imageUrl] || null
+      : null;
     return {
       ...m,
       stats: { totalApproved, publishedPages, totalPages: m.pages.length },
+      firstPageUrl,
     };
   });
 
@@ -38,15 +68,8 @@ export default async function HomePage() {
     (m) => m.stats.totalApproved > 0
   );
 
-  const totalManuscripts = visibleManuscripts.length;
-  const totalAnnotations = visibleManuscripts.reduce(
-    (sum, m) => sum + m.stats.totalApproved,
-    0
-  );
-  const totalPages = visibleManuscripts.reduce(
-    (sum, m) => sum + m.stats.totalPages,
-    0
-  );
+  const totalManuscripts = manuscripts.length;
+  const translatedManuscripts = visibleManuscripts.length;
 
   return (
     <div className="min-h-screen bg-sky-50">
@@ -127,9 +150,9 @@ export default async function HomePage() {
               untuk <span className="font-medium text-white">R</span>iset.
             </p>
             <p className="text-sky-100 text-base md:text-lg leading-relaxed">
-              Koleksi naskah beraksara Pegon dan Hanacaraka yang telah
-              ditransliterasi dan diterjemahkan secara manual oleh para
-              kontributor. Setiap anotasi telah diverifikasi oleh admin.
+              Platform literasi digital untuk penelitian naskah kuno berbagai
+              aksara Nusantara — dikerjakan secara kolaboratif oleh kontributor
+              terverifikasi.
             </p>
           </div>
 
@@ -160,23 +183,23 @@ export default async function HomePage() {
               {totalManuscripts}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
-              Naskah
+              Total Naskah
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
             <p className="text-3xl md:text-4xl font-bold text-blue-900">
-              {totalPages}
+              {translatedManuscripts}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
-              Halaman
+              Naskah Ditransliterasi
             </p>
           </div>
           <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
             <p className="text-3xl md:text-4xl font-bold text-blue-900">
-              {totalAnnotations}
+              {totalContributors}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
-              Anotasi
+              Kontributor
             </p>
           </div>
         </div>
@@ -192,8 +215,8 @@ export default async function HomePage() {
             </h2>
           </div>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Naskah yang sudah ditransliterasi dan diverifikasi, siap dibaca
-            publik.
+            Sorotan naskah yang sudah ditransliterasi dan diverifikasi, siap
+            dibaca publik.
           </p>
         </div>
 
@@ -213,37 +236,53 @@ export default async function HomePage() {
               <Link
                 key={m.id}
                 href={`/naskah/${m.id}`}
-                className="group bg-white rounded-xl border border-sky-100 p-5 hover:border-teal-400 hover:shadow-lg transition-all"
+                className="group bg-white rounded-xl border border-sky-100 p-5 hover:border-teal-400 hover:shadow-lg transition-all flex flex-col"
               >
+                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg leading-tight text-slate-900">
                     {m.title}
                   </h3>
                   <span
-                    className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${
-                      m.script === "PEGON"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-teal-100 text-teal-800"
-                    }`}
+                    className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(
+                      m.script
+                    )}`}
                   >
-                    {m.script}
+                    {formatScript(m.script)}
                   </span>
                 </div>
 
-                <div className="text-sm text-slate-700 space-y-1 mb-4">
+                {/* Meta */}
+                <div className="text-sm text-slate-700 space-y-1 mb-3">
                   {m.year && <p>Tahun: {m.year}</p>}
                   {m.source && <p>Sumber: {m.source}</p>}
                 </div>
 
-                {m.description && (
-                  <p className="text-sm text-slate-500 mb-4 line-clamp-2">
-                    {m.description}
-                  </p>
-                )}
+                {/* Deskripsi dengan background gambar naskah */}
+                <div className="relative flex-1 rounded-lg overflow-hidden min-h-[110px] mb-4">
+                  {m.firstPageUrl && (
+                    <>
+                      <div
+                        className="absolute inset-0 bg-cover bg-center opacity-70"
+                        style={{
+                          backgroundImage: `url(${m.firstPageUrl})`,
+                        }}
+                      ></div>
+                      <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/60 to-white/95"></div>
+                    </>
+                  )}
+                  <div className="relative p-3 flex items-end h-full min-h-[110px]">
+                    <p className="text-sm text-slate-800 font-medium line-clamp-3 drop-shadow-sm">
+                      {m.description ||
+                        "Belum ada deskripsi untuk naskah ini."}
+                    </p>
+                  </div>
+                </div>
 
+                {/* Footer */}
                 <div className="flex gap-4 text-xs text-slate-500 pt-3 border-t border-sky-50">
                   <span className="font-medium text-teal-700">
-                    {m.stats.totalApproved} anotasi
+                    {m.stats.totalApproved} kata diterjemahkan
                   </span>
                   <span>
                     {m.stats.publishedPages}/{m.stats.totalPages} halaman
@@ -310,40 +349,41 @@ export default async function HomePage() {
             </h2>
           </div>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Dirancang untuk pelestarian dan penelitian naskah Nusantara.
+            Dirancang untuk pelestarian dan penelitian naskah Nusantara
+            berbagai aksara.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-5">
           <FeatureCard
-            icon="📜"
-            title="Pegon & Hanacaraka"
-            desc="Mendukung dua aksara utama naskah Nusantara dengan alur transliterasi khusus."
+            icon="🎯"
+            title="Multi Aksara Nusantara"
+            desc="Mendukung berbagai aksara Nusantara — Pegon, Carakan, Jawi, Bali, dan aksara daerah lainnya dalam satu platform."
           />
           <FeatureCard
             icon="👥"
             title="Crowdsourcing"
-            desc="Melibatkan banyak kontributor terverifikasi untuk mempercepat proses."
+            desc="Melibatkan banyak kontributor terverifikasi untuk mempercepat proses transliterasi lintas aksara."
           />
           <FeatureCard
             icon="✅"
             title="Verifikasi Akademis"
-            desc="Setiap anotasi diverifikasi admin agar sah untuk keperluan riset."
+            desc="Setiap anotasi diverifikasi admin agar sah dan akurat untuk keperluan riset filologi."
           />
           <FeatureCard
-            icon="🔍"
-            title="Tooltip Interaktif"
-            desc="Hover kotak anotasi untuk melihat transliterasi + terjemahan langsung."
+            icon="📖"
+            title="Multi Transliterasi"
+            desc="Satu naskah dapat ditransliterasi ke berbagai aksara dan bahasa — didukung oleh kontributor dengan keahlian masing-masing."
           />
           <FeatureCard
             icon="📊"
             title="Export Data"
-            desc="Download hasil transliterasi dalam format JSON atau CSV untuk penelitian."
+            desc="Download hasil transliterasi dalam format JSON atau CSV untuk analisis penelitian lanjutan."
           />
           <FeatureCard
             icon="🌐"
             title="Open Source"
-            desc="Kode terbuka di GitHub, dapat diadopsi dan dikembangkan siapa saja."
+            desc="Kode terbuka di GitHub — dapat diadopsi, dimodifikasi, dan dikembangkan siapa saja."
           />
         </div>
       </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type Annotation = {
   id: string;
@@ -22,41 +22,103 @@ export default function PublicCanvas({
   imageUrl: string;
   annotations: Annotation[];
 }) {
-  const [hovered, setHovered] = useState<Annotation | null>(null);
+  const [showBoxes, setShowBoxes] = useState(false);
   const [selected, setSelected] = useState<Annotation | null>(null);
-  const [showBoxes, setShowBoxes] = useState(true);
-  const [tooltipPos, setTooltipPos] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
-  function handleMouseEnter(
-    a: Annotation,
-    e: React.MouseEvent<HTMLDivElement>
-  ) {
-    setHovered(a);
-    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
-    if (!rect) return;
-    setTooltipPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  useEffect(() => {
+    // Cek browser dukung Web Speech API
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      setVoiceSupported(true);
+    }
+
+    return () => {
+      // Stop audio saat pindah halaman / unmount
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
+  function findIndonesianVoice(): SpeechSynthesisVoice | null {
+    if (!voiceSupported) return null;
+    const voices = window.speechSynthesis.getVoices();
+    // Prioritas: id-ID → id → apapun yang mengandung "Indonesia"
+    return (
+      voices.find((v) => v.lang === "id-ID") ||
+      voices.find((v) => v.lang.startsWith("id")) ||
+      voices.find((v) => v.name.toLowerCase().includes("indonesia")) ||
+      null
+    );
   }
 
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.parentElement?.getBoundingClientRect();
-    if (!rect) return;
-    setTooltipPos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  function speak(annotation: Annotation) {
+    if (!voiceSupported) return;
+
+    // Kalau tombol yang sama diklik lagi, stop
+    if (speakingId === annotation.id) {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    // Stop audio yang sedang jalan
+    window.speechSynthesis.cancel();
+
+    const text = `${annotation.transliteration}. ${annotation.translation}`;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "id-ID";
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+
+    const voice = findIndonesianVoice();
+    if (voice) utterance.voice = voice;
+
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+    setSpeakingId(annotation.id);
+  }
+
+  function speakAll() {
+    if (!voiceSupported || annotations.length === 0) return;
+
+    if (speakingId === "all") {
+      window.speechSynthesis.cancel();
+      setSpeakingId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+
+    const text = annotations
+      .map((a) => `${a.transliteration}. ${a.translation}`)
+      .join(". ");
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "id-ID";
+    utterance.rate = 0.9;
+
+    const voice = findIndonesianVoice();
+    if (voice) utterance.voice = voice;
+
+    utterance.onend = () => setSpeakingId(null);
+    utterance.onerror = () => setSpeakingId(null);
+
+    utteranceRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+    setSpeakingId("all");
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Controls */}
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowBoxes(!showBoxes)}
             className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition ${
@@ -67,17 +129,33 @@ export default function PublicCanvas({
           >
             {showBoxes ? "👁 Sembunyikan Kotak" : "👁 Tampilkan Kotak"}
           </button>
+
+          {voiceSupported && annotations.length > 0 && (
+            <button
+              onClick={speakAll}
+              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition flex items-center gap-1.5 ${
+                speakingId === "all"
+                  ? "bg-teal-600 text-white border-teal-600 shadow-md"
+                  : "bg-white text-teal-700 border-teal-300 hover:bg-teal-50"
+              }`}
+            >
+              {speakingId === "all" ? (
+                <>⏸ Stop Semua</>
+              ) : (
+                <>🔊 Putar Semua</>
+              )}
+            </button>
+          )}
+
           <span className="text-slate-500 text-xs">
-            {annotations.length} anotasi terverifikasi
+            {annotations.length} kata terverifikasi
           </span>
         </div>
-        {selected && (
-          <button
-            onClick={() => setSelected(null)}
-            className="text-xs text-slate-500 hover:text-teal-700 hover:underline"
-          >
-            Tutup panel detail
-          </button>
+
+        {voiceSupported && (
+          <span className="text-[10px] text-slate-400 hidden md:block">
+            🎧 Audio text-to-speech aktif
+          </span>
         )}
       </div>
 
@@ -91,15 +169,13 @@ export default function PublicCanvas({
         />
 
         {showBoxes &&
-          annotations.map((a) => (
+          annotations.map((a, i) => (
             <div
               key={a.id}
               className={`absolute border-2 transition-all cursor-pointer ${
                 selected?.id === a.id
                   ? "border-blue-700 bg-blue-500/30 z-20"
-                  : hovered?.id === a.id
-                    ? "border-teal-500 bg-teal-500/20 z-10"
-                    : "border-teal-500 bg-teal-500/10 hover:bg-teal-500/20"
+                  : "border-teal-500 bg-teal-500/15 hover:bg-teal-500/30 hover:border-teal-600 z-10"
               }`}
               style={{
                 left: `${a.x * 100}%`,
@@ -107,82 +183,152 @@ export default function PublicCanvas({
                 width: `${a.w * 100}%`,
                 height: `${a.h * 100}%`,
               }}
-              onMouseEnter={(e) => handleMouseEnter(a, e)}
-              onMouseMove={handleMouseMove}
-              onMouseLeave={() => setHovered(null)}
               onClick={() => setSelected(a)}
-            />
+            >
+              <span className="absolute -top-5 left-0 text-[10px] bg-blue-900 text-white px-1.5 py-0.5 rounded font-bold">
+                {i + 1}
+              </span>
+            </div>
           ))}
+      </div>
 
-        {/* Tooltip on hover */}
-        {hovered && tooltipPos && !selected && (
-          <div
-            className="absolute z-30 pointer-events-none bg-blue-900/95 text-white px-3 py-2 rounded-lg text-sm shadow-lg max-w-xs"
-            style={{
-              left: Math.min(tooltipPos.x + 15, 9999),
-              top: tooltipPos.y + 15,
-            }}
-          >
-            <p className="font-medium">{hovered.transliteration}</p>
-            <p className="text-xs text-sky-200 mt-1">{hovered.translation}</p>
+      {/* List Anotasi */}
+      <div>
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-1 h-5 bg-teal-500 rounded"></div>
+          <h3 className="font-bold text-blue-900">
+            Teks Hasil Transliterasi
+          </h3>
+        </div>
+
+        {annotations.length === 0 ? (
+          <div className="bg-white border border-sky-100 rounded-xl p-8 text-center text-slate-500 text-sm">
+            Belum ada transliterasi untuk halaman ini.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {annotations.map((a, i) => {
+              const isSpeaking = speakingId === a.id;
+              return (
+                <div key={a.id}>
+                  {/* Header nomor + kontributor + tombol audio */}
+                  <div className="flex items-center justify-between mb-2 px-1 gap-2">
+                    <span className="text-xs font-bold text-blue-900 tracking-wider">
+                      KATA #{i + 1}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-500">
+                        oleh {a.contributorName}
+                      </span>
+                      {voiceSupported && (
+                        <button
+                          onClick={() => speak(a)}
+                          title={
+                            isSpeaking
+                              ? "Stop audio"
+                              : "Putar transliterasi + terjemahan"
+                          }
+                          className={`inline-flex items-center justify-center w-7 h-7 rounded-full transition ${
+                            isSpeaking
+                              ? "bg-teal-600 text-white shadow-md animate-pulse"
+                              : "bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200"
+                          }`}
+                        >
+                          {isSpeaking ? "⏸" : "🔊"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3 kotak sejajar */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {/* Kotak Transliterasi */}
+                    <div
+                      className={`rounded-xl border-2 overflow-hidden shadow-sm transition cursor-pointer ${
+                        selected?.id === a.id
+                          ? "border-blue-700 shadow-md"
+                          : "border-sky-100 hover:border-teal-300 hover:shadow-md"
+                      }`}
+                      onClick={() => {
+                        setSelected(a);
+                        setShowBoxes(true);
+                      }}
+                    >
+                      <div className="bg-blue-900 px-3 py-2">
+                        <p className="text-[10px] font-bold text-white uppercase tracking-wider">
+                          Transliterasi
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 min-h-[80px]">
+                        <p className="text-blue-900 font-semibold text-base leading-snug">
+                          {a.transliteration}
+                        </p>
+                        {a.pegonText && (
+                          <p className="text-xs text-slate-500 mt-2 font-mono leading-relaxed">
+                            {a.pegonText}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Kotak Terjemahan */}
+                    <div
+                      className={`rounded-xl border-2 overflow-hidden shadow-sm transition cursor-pointer ${
+                        selected?.id === a.id
+                          ? "border-blue-700 shadow-md"
+                          : "border-sky-100 hover:border-teal-300 hover:shadow-md"
+                      }`}
+                      onClick={() => {
+                        setSelected(a);
+                        setShowBoxes(true);
+                      }}
+                    >
+                      <div className="bg-teal-700 px-3 py-2">
+                        <p className="text-[10px] font-bold text-white uppercase tracking-wider">
+                          Terjemahan
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 min-h-[80px]">
+                        <p className="text-slate-700 text-sm leading-relaxed">
+                          {a.translation}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Kotak Aparatus Kritis */}
+                    <div
+                      className={`rounded-xl border-2 overflow-hidden shadow-sm transition cursor-pointer ${
+                        selected?.id === a.id
+                          ? "border-blue-700 shadow-md"
+                          : "border-sky-100 hover:border-teal-300 hover:shadow-md"
+                      }`}
+                      onClick={() => {
+                        setSelected(a);
+                        setShowBoxes(true);
+                      }}
+                    >
+                      <div className="bg-slate-700 px-3 py-2">
+                        <p className="text-[10px] font-bold text-white uppercase tracking-wider">
+                          Aparatus Kritis
+                        </p>
+                      </div>
+                      <div className="bg-white p-3 min-h-[80px]">
+                        <p className="text-slate-600 text-sm italic leading-relaxed">
+                          {a.notes || "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Detail panel */}
-      {selected && (
-        <div className="bg-white border border-sky-100 rounded-xl p-5 shadow-md">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-5 bg-teal-500 rounded"></div>
-              <h3 className="font-bold text-blue-900">Detail Anotasi</h3>
-            </div>
-            <span className="text-xs text-slate-500">
-              oleh {selected.contributorName}
-            </span>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="text-xs text-slate-500 mb-0.5">
-                Transliterasi Latin
-              </p>
-              <p className="font-medium text-lg text-blue-900">
-                {selected.transliteration}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs text-slate-500 mb-0.5">
-                Terjemahan Indonesia
-              </p>
-              <p className="text-slate-700">{selected.translation}</p>
-            </div>
-
-            {selected.pegonText && (
-              <div>
-                <p className="text-xs text-slate-500 mb-0.5">Teks Asli</p>
-                <p className="font-mono text-blue-900">
-                  {selected.pegonText}
-                </p>
-              </div>
-            )}
-
-            {selected.notes && (
-              <div>
-                <p className="text-xs text-slate-500 mb-0.5">
-                  Catatan Filologis
-                </p>
-                <p className="text-slate-600 italic">{selected.notes}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       <p className="text-xs text-slate-500">
-        💡 Arahkan kursor ke kotak untuk melihat transliterasi. Klik kotak untuk
-        detail lengkap.
+        💡 Klik salah satu kotak untuk menyorot posisi kata di gambar. Klik 🔊
+        untuk mendengar transliterasi &amp; terjemahan.
       </p>
     </div>
   );

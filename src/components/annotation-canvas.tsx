@@ -23,6 +23,8 @@ type Annotation = {
 type Props = {
   pageId: string;
   imageUrl: string;
+  imageWidth: number;
+  imageHeight: number;
   initialAnnotations: Annotation[];
 };
 
@@ -36,6 +38,8 @@ type Draft = {
 export default function AnnotationCanvas({
   pageId,
   imageUrl,
+  imageWidth,
+  imageHeight,
   initialAnnotations,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,8 +53,8 @@ export default function AnnotationCanvas({
   const [formMode, setFormMode] = useState<"new" | "edit" | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
-  // Sync state ketika initialAnnotations berubah (setelah router.refresh)
   useEffect(() => {
     setAnnotations(initialAnnotations);
   }, [initialAnnotations]);
@@ -102,6 +106,7 @@ export default function AnnotationCanvas({
     setSelected(a);
     setDraft(null);
     setFormMode("edit");
+    setSuccessMsg("");
   }
 
   function cancelForm() {
@@ -109,6 +114,11 @@ export default function AnnotationCanvas({
     setDraft(null);
     setSelected(null);
     setError("");
+  }
+
+  function flashSuccess(msg: string) {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(""), 3000);
   }
 
   async function handleSaveNew(formData: {
@@ -137,6 +147,7 @@ export default function AnnotationCanvas({
       if (result.success && result.annotation) {
         setAnnotations([...annotations, result.annotation as Annotation]);
         cancelForm();
+        flashSuccess("✅ Anotasi baru tersimpan");
       }
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan");
@@ -156,7 +167,13 @@ export default function AnnotationCanvas({
     setError("");
 
     try {
+      const wasSubmitted =
+        selected.status === "SUBMITTED" || selected.status === "APPROVED";
+
       await updateAnnotation(selected.id, formData);
+
+      const newStatus = wasSubmitted ? "DRAFT" : selected.status;
+
       setAnnotations(
         annotations.map((a) =>
           a.id === selected.id
@@ -166,11 +183,21 @@ export default function AnnotationCanvas({
                 translation: formData.translation,
                 notes: formData.notes || null,
                 pegonText: formData.pegonText || null,
+                status: newStatus,
               }
             : a
         )
       );
+
       cancelForm();
+
+      if (wasSubmitted) {
+        flashSuccess(
+          "✅ Tersimpan. Status kembali ke DRAFT — perlu submit ulang untuk review admin."
+        );
+      } else {
+        flashSuccess("✅ Perubahan tersimpan");
+      }
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan");
     } finally {
@@ -187,15 +214,38 @@ export default function AnnotationCanvas({
       await deleteAnnotation(selected.id);
       setAnnotations(annotations.filter((a) => a.id !== selected.id));
       cancelForm();
+      flashSuccess("🗑 Anotasi dihapus");
     } catch (err: any) {
       setError(err.message || "Gagal menghapus");
+      setTimeout(() => setError(""), 5000);
     } finally {
       setSaving(false);
     }
   }
 
+  const activeBox =
+    formMode === "new" ? draft : formMode === "edit" ? selected : null;
+
   return (
     <div className="space-y-3">
+      {/* Notifikasi sukses */}
+      {successMsg && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-start gap-2">
+          <span>{successMsg}</span>
+        </div>
+      )}
+
+      {/* Info kalau ada anotasi berstatus SUBMITTED/APPROVED */}
+      {annotations.some(
+        (a) => a.status === "SUBMITTED" || a.status === "APPROVED"
+      ) && (
+        <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-xs text-sky-900">
+          💡 Anotasi yang sudah disubmit/disetujui tetap bisa diedit. Kalau
+          diedit, status otomatis kembali ke <strong>DRAFT</strong> supaya
+          admin review ulang.
+        </div>
+      )}
+
       <div
         ref={containerRef}
         className="relative bg-sky-50 rounded-xl overflow-hidden select-none border border-sky-100"
@@ -214,7 +264,6 @@ export default function AnnotationCanvas({
           draggable={false}
         />
 
-        {/* Existing annotations */}
         {annotations.map((a) => (
           <div
             key={a.id}
@@ -247,7 +296,6 @@ export default function AnnotationCanvas({
           </div>
         ))}
 
-        {/* Draft box (sedang digambar) */}
         {draft && (
           <div
             className="absolute border-2 border-dashed border-red-500 bg-red-500/10 pointer-events-none"
@@ -261,33 +309,66 @@ export default function AnnotationCanvas({
         )}
       </div>
 
-      {/* Form popup */}
       {formMode && (
         <div className="bg-white border border-sky-100 rounded-xl p-5 shadow-md">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <div className="w-1 h-5 bg-teal-500 rounded"></div>
             <h3 className="font-bold text-blue-900">
               {formMode === "new" ? "Anotasi Baru" : "Edit Anotasi"}
             </h3>
           </div>
 
-          <AnnotationForm
-            initial={
-              formMode === "edit" && selected
-                ? {
-                    transliteration: selected.transliteration,
-                    translation: selected.translation,
-                    notes: selected.notes || "",
-                    pegonText: selected.pegonText || "",
-                  }
-                : undefined
-            }
-            saving={saving}
-            error={error}
-            onSave={formMode === "new" ? handleSaveNew : handleUpdate}
-            onCancel={cancelForm}
-            onDelete={formMode === "edit" ? handleDelete : undefined}
-          />
+          {formMode === "edit" && selected && (
+            <div className="mb-4 flex items-center gap-2 text-xs">
+              <span className="text-slate-500">Status saat ini:</span>
+              <span
+                className={`px-2 py-0.5 rounded font-medium ${
+                  selected.status === "APPROVED"
+                    ? "bg-green-100 text-green-700"
+                    : selected.status === "SUBMITTED"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : selected.status === "REJECTED"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {selected.status}
+              </span>
+            </div>
+          )}
+
+          {activeBox && (
+            <CropPreview
+              imageUrl={imageUrl}
+              box={activeBox}
+              imageWidth={imageWidth}
+              imageHeight={imageHeight}
+            />
+          )}
+
+          <div className="mt-4">
+            <AnnotationForm
+              initial={
+                formMode === "edit" && selected
+                  ? {
+                      transliteration: selected.transliteration,
+                      translation: selected.translation,
+                      notes: selected.notes || "",
+                      pegonText: selected.pegonText || "",
+                    }
+                  : undefined
+              }
+              saving={saving}
+              error={error}
+              onSave={formMode === "new" ? handleSaveNew : handleUpdate}
+              onCancel={cancelForm}
+              onDelete={formMode === "edit" ? handleDelete : undefined}
+              canDelete={
+                formMode === "edit" &&
+                selected?.status !== "APPROVED"
+              }
+            />
+          </div>
         </div>
       )}
 
@@ -299,6 +380,62 @@ export default function AnnotationCanvas({
   );
 }
 
+function CropPreview({
+  imageUrl,
+  box,
+  imageWidth,
+  imageHeight,
+}: {
+  imageUrl: string;
+  box: { x: number; y: number; w: number; h: number };
+  imageWidth: number;
+  imageHeight: number;
+}) {
+  const cropPixelW = box.w * imageWidth;
+  const cropPixelH = box.h * imageHeight;
+  const aspect = cropPixelW / cropPixelH;
+
+  const boxHeight = 160;
+  const boxWidth = boxHeight * aspect;
+
+  return (
+    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-medium text-slate-600">
+          📸 Area yang dipilih
+        </p>
+        <p className="text-[10px] text-slate-400">
+          {Math.round(cropPixelW)} × {Math.round(cropPixelH)} px
+        </p>
+      </div>
+      <div className="flex justify-center">
+        <div
+          className="relative overflow-hidden rounded border border-slate-200 bg-white"
+          style={{
+            width: `${Math.min(boxWidth, 400)}px`,
+            height: `${boxHeight}px`,
+          }}
+        >
+          <img
+            src={imageUrl}
+            alt="Crop preview"
+            draggable={false}
+            className="absolute pointer-events-none select-none"
+            style={{
+              width: `${100 / box.w}%`,
+              height: `${100 / box.h}%`,
+              left: `${-(box.x / box.w) * 100}%`,
+              top: `${-(box.y / box.h) * 100}%`,
+              maxWidth: "none",
+              maxHeight: "none",
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AnnotationForm({
   initial,
   saving,
@@ -306,6 +443,7 @@ function AnnotationForm({
   onSave,
   onCancel,
   onDelete,
+  canDelete,
 }: {
   initial?: {
     transliteration: string;
@@ -323,6 +461,7 @@ function AnnotationForm({
   }) => void;
   onCancel: () => void;
   onDelete?: () => void;
+  canDelete?: boolean;
 }) {
   const [transliteration, setTransliteration] = useState(
     initial?.transliteration || ""
@@ -384,7 +523,7 @@ function AnnotationForm({
 
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-1">
-          Catatan Filologis{" "}
+          Aparatus Kritis{" "}
           <span className="text-slate-400 font-normal">(opsional)</span>
         </label>
         <textarea
@@ -398,7 +537,7 @@ function AnnotationForm({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex gap-2 pt-1">
+      <div className="flex gap-2 pt-1 flex-wrap">
         <button
           type="submit"
           disabled={saving}
@@ -413,7 +552,7 @@ function AnnotationForm({
         >
           Batal
         </button>
-        {onDelete && (
+        {onDelete && canDelete && (
           <button
             type="button"
             onClick={onDelete}
@@ -422,6 +561,11 @@ function AnnotationForm({
           >
             Hapus
           </button>
+        )}
+        {onDelete && !canDelete && (
+          <span className="ml-auto text-xs text-slate-400 self-center">
+            Anotasi approved tidak bisa dihapus
+          </span>
         )}
       </div>
     </form>

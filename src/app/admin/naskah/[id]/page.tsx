@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function ManuscriptDetailPage({
   params,
@@ -40,30 +41,44 @@ export default async function ManuscriptDetailPage({
       <div className="mb-6">
         <Link
           href="/admin/naskah"
-          className="text-sm text-gray-600 hover:underline"
+          className="text-sm text-slate-600 hover:text-teal-700 hover:underline transition"
         >
           ← Kembali
         </Link>
-        <h1 className="text-2xl font-bold mt-2">{manuscript.title}</h1>
-        <div className="flex gap-3 mt-2 text-sm text-gray-600">
-          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-            {manuscript.script}
+        <div className="flex items-center gap-3 mt-2">
+          <div className="w-1 h-6 bg-teal-500 rounded"></div>
+          <h1 className="text-2xl font-bold text-blue-900">
+            {manuscript.title}
+          </h1>
+        </div>
+        <div className="flex gap-3 mt-3 text-sm text-slate-600 ml-4 flex-wrap items-center">
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+              manuscript.script
+            )}`}
+          >
+            {formatScript(manuscript.script)}
           </span>
           {manuscript.year && <span>Tahun: {manuscript.year}</span>}
           {manuscript.source && <span>Sumber: {manuscript.source}</span>}
-          <span>{manuscript.pages.length} halaman</span>
+          <span className="font-medium text-teal-700">
+            {manuscript.pages.length} halaman
+          </span>
         </div>
         {manuscript.description && (
-          <p className="text-sm text-gray-600 mt-3">
+          <p className="text-sm text-slate-600 mt-3 ml-4 max-w-3xl">
             {manuscript.description}
           </p>
         )}
       </div>
 
-      <h2 className="text-lg font-semibold mb-4">Halaman</h2>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-1 h-5 bg-teal-500 rounded"></div>
+        <h2 className="text-lg font-bold text-blue-900">Halaman</h2>
+      </div>
 
       {manuscript.pages.length === 0 ? (
-        <div className="bg-white rounded-lg border p-8 text-center text-gray-500">
+        <div className="bg-white rounded-xl border border-sky-100 p-8 text-center text-slate-500 shadow-sm">
           Belum ada halaman yang diupload.
         </div>
       ) : (
@@ -71,9 +86,9 @@ export default async function ManuscriptDetailPage({
           {manuscript.pages.map((page) => (
             <div
               key={page.id}
-              className="bg-white rounded-lg border overflow-hidden"
+              className="bg-white rounded-xl border border-sky-100 overflow-hidden shadow-sm hover:shadow-md hover:border-teal-300 transition-all"
             >
-              <div className="aspect-[3/4] bg-gray-100">
+              <div className="aspect-[3/4] bg-sky-50">
                 {signedUrls[page.imageUrl] ? (
                   <img
                     src={signedUrls[page.imageUrl]}
@@ -81,15 +96,29 @@ export default async function ManuscriptDetailPage({
                     className="w-full h-full object-contain"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
                     Gambar tidak tersedia
                   </div>
                 )}
               </div>
               <div className="p-3 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">Hal. {page.pageNumber}</span>
-                  <span className="text-xs text-gray-500">{page.status}</span>
+                  <span className="font-semibold text-blue-900">
+                    Hal. {page.pageNumber}
+                  </span>
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      page.status === "PUBLISHED"
+                        ? "bg-green-100 text-green-700"
+                        : page.status === "REVIEW"
+                          ? "bg-yellow-100 text-yellow-700"
+                          : page.status === "IN_PROGRESS"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {page.status}
+                  </span>
                 </div>
               </div>
             </div>
