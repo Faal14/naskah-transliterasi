@@ -167,6 +167,7 @@ export default async function WorkPage({
           }))}
           initialTransliteration={currentPage.fullTransliteration || ""}
           initialTranslation={currentPage.fullTranslation || ""}
+          initialApparatus={currentPage.fullApparatus || ""}
         />
       </div>
     </div>

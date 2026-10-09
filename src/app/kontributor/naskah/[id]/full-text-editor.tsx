@@ -10,12 +10,16 @@ export default function FullTextEditor({
   onChange,
   translationValue,
   onTranslationChange,
+  apparatusValue,
+  onApparatusChange,
 }: {
   pageId: string;
   value: string;
   onChange: (v: string) => void;
   translationValue: string;
   onTranslationChange: (v: string) => void;
+  apparatusValue: string;
+  onApparatusChange: (v: string) => void;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -23,19 +27,25 @@ export default function FullTextEditor({
   const [lastSaved, setLastSaved] = useState({
     translit: value,
     translation: translationValue,
+    apparatus: apparatusValue,
   });
 
   const isDirty =
     value !== lastSaved.translit ||
-    translationValue !== lastSaved.translation;
+    translationValue !== lastSaved.translation ||
+    apparatusValue !== lastSaved.apparatus;
 
   async function handleSave() {
     setSaving(true);
     setMessage("");
 
     try {
-      await saveFullText(pageId, value, translationValue);
-      setLastSaved({ translit: value, translation: translationValue });
+      await saveFullText(pageId, value, translationValue, apparatusValue);
+      setLastSaved({
+        translit: value,
+        translation: translationValue,
+        apparatus: apparatusValue,
+      });
       setMessage("✅ Paragraf utuh tersimpan");
       router.refresh();
       setTimeout(() => setMessage(""), 3000);
@@ -90,6 +100,19 @@ export default function FullTextEditor({
             {translationValue.split(/\s+/).filter(Boolean).length} kata
           </p>
         </div>
+      </div>
+
+      <div className="mt-4">
+        <label className="block text-xs font-bold text-blue-900 uppercase tracking-wider mb-2">
+          Aparatus Kritis
+        </label>
+        <textarea
+          value={apparatusValue}
+          onChange={(e) => onApparatusChange(e.target.value)}
+          rows={4}
+          placeholder="Catatan filologis, varian bacaan, tafsir ganda, atau keterangan lain untuk halaman ini..."
+          className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent italic"
+        />
       </div>
 
       <div className="flex items-center gap-3 mt-4 pt-4 border-t border-sky-100">

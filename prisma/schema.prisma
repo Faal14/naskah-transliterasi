@@ -92,6 +92,7 @@ model Page {
   status               PageStatus   @default(UNTRANSLATED)
   fullTransliteration  String?
   fullTranslation      String?
+  fullApparatus        String?
   createdAt            DateTime     @default(now())
   annotations          Annotation[]
 
@@ -155,8 +156,6 @@ model Comment {
 
   @@index([manuscriptId])
 }
-
-// ==================== RATING & REVIEW PLATFORM ====================
 
 model PlatformRating {
   id          String   @id @default(cuid())

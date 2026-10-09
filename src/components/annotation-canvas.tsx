@@ -29,6 +29,7 @@ type Props = {
   onAnnotationCreated?: (ann: {
     transliteration: string;
     translation: string;
+    notes: string;
   }) => void;
 };
 
@@ -159,6 +160,7 @@ export default function AnnotationCanvas({
           onAnnotationCreated({
             transliteration: formData.transliteration,
             translation: formData.translation,
+            notes: formData.notes,
           });
         }
       }

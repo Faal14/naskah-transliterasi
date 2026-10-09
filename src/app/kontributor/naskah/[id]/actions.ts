@@ -128,11 +128,11 @@ export async function submitPage(pageId: string) {
   return { success: true, count: result.count };
 }
 
-// ============ BARU: Save Paragraf Utuh ============
 export async function saveFullText(
   pageId: string,
   fullTransliteration: string,
-  fullTranslation: string
+  fullTranslation: string,
+  fullApparatus: string
 ) {
   await checkAuth();
 
@@ -141,6 +141,7 @@ export async function saveFullText(
     data: {
       fullTransliteration: fullTransliteration || null,
       fullTranslation: fullTranslation || null,
+      fullApparatus: fullApparatus || null,
     },
   });
 

@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import PublicCanvas from "@/components/public-canvas";
 import RatingStars from "@/components/rating-stars";
+import CommentSection from "@/components/comment-section";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { formatScript, getScriptColor } from "@/lib/script-label";
@@ -56,6 +57,23 @@ export default async function PublicManuscriptPage({
   const userScore = user
     ? ratings.find((r) => r.userId === user.id)?.score || null
     : null;
+
+  // Komentar APPROVED untuk naskah ini
+  const comments = await prisma.comment.findMany({
+    where: { manuscriptId: id, status: "APPROVED" },
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: { select: { name: true } },
+    },
+  });
+
+  const formattedComments = comments.map((c) => ({
+    id: c.id,
+    userName: c.user?.name || c.guestName || "Anonim",
+    content: c.content,
+    createdAt: c.createdAt.toISOString(),
+    isGuest: !c.userId,
+  }));
 
   const currentPage = manuscript.pages.find(
     (pg) => pg.pageNumber === pageNum
@@ -177,12 +195,21 @@ export default async function PublicManuscriptPage({
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <PublicCanvas
             imageUrl={imageUrl}
             annotations={annotations}
             fullTransliteration={currentPage.fullTransliteration || ""}
             fullTranslation={currentPage.fullTranslation || ""}
+            fullApparatus={currentPage.fullApparatus || ""}
+          />
+
+          <CommentSection
+            manuscriptId={id}
+            initialComments={formattedComments}
+            currentUser={
+              user ? { name: user.name, email: user.email } : null
+            }
           />
         </div>
       </main>

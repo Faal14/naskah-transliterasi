@@ -25,6 +25,7 @@ export default function WorkArea({
   initialAnnotations,
   initialTransliteration,
   initialTranslation,
+  initialApparatus,
 }: {
   pageId: string;
   imageUrl: string;
@@ -33,13 +34,16 @@ export default function WorkArea({
   initialAnnotations: Annotation[];
   initialTransliteration: string;
   initialTranslation: string;
+  initialApparatus: string;
 }) {
   const [fullTranslit, setFullTranslit] = useState(initialTransliteration);
   const [fullTranslation, setFullTranslation] = useState(initialTranslation);
+  const [fullApparatus, setFullApparatus] = useState(initialApparatus);
 
   function handleAnnotationCreated(ann: {
     transliteration: string;
     translation: string;
+    notes: string;
   }) {
     setFullTranslit((prev) => {
       const trimmed = prev.trim();
@@ -51,6 +55,12 @@ export default function WorkArea({
       const trimmed = prev.trim();
       return trimmed ? `${trimmed} ${ann.translation}` : ann.translation;
     });
+    if (ann.notes && ann.notes.trim()) {
+      setFullApparatus((prev) => {
+        const trimmed = prev.trim();
+        return trimmed ? `${trimmed}\n• ${ann.notes}` : `• ${ann.notes}`;
+      });
+    }
   }
 
   return (
@@ -70,6 +80,8 @@ export default function WorkArea({
         onChange={setFullTranslit}
         translationValue={fullTranslation}
         onTranslationChange={setFullTranslation}
+        apparatusValue={fullApparatus}
+        onApparatusChange={setFullApparatus}
       />
     </>
   );

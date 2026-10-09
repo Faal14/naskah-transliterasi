@@ -20,11 +20,13 @@ export default function PublicCanvas({
   annotations,
   fullTransliteration,
   fullTranslation,
+  fullApparatus,
 }: {
   imageUrl: string;
   annotations: Annotation[];
   fullTransliteration: string;
   fullTranslation: string;
+  fullApparatus: string;
 }) {
   const [hoveredAnn, setHoveredAnn] = useState<Annotation | null>(null);
   const [selectedAnn, setSelectedAnn] = useState<Annotation | null>(null);
@@ -80,7 +82,6 @@ export default function PublicCanvas({
     setSpeakingId(id);
   }
 
-  // Anotasi yang sedang aktif (hover atau selected)
   const activeAnn = hoveredAnn || selectedAnn;
 
   return (
@@ -140,17 +141,27 @@ export default function PublicCanvas({
                 {hoveredAnn.translation}
               </p>
             </div>
+            {hoveredAnn.notes && (
+              <div className="border-t border-blue-800 mt-1.5 pt-1.5">
+                <p className="text-[10px] text-sky-300 uppercase tracking-wider mb-0.5">
+                  Aparatus Kritis
+                </p>
+                <p className="text-xs text-sky-100 italic leading-snug">
+                  {hoveredAnn.notes}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* 2 KOLOM PARAGRAF UTUH */}
+      {/* 3 KOLOM: ALIH AKSARA | ALIH BAHASA | APARATUS KRITIS */}
       {annotations.length === 0 && !fullTransliteration ? (
         <div className="bg-white border border-sky-100 rounded-xl p-8 text-center text-slate-500 text-sm">
           Belum ada transliterasi untuk halaman ini.
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-3 gap-4">
           {/* Kolom 1: Alih Aksara */}
           <div className="bg-white rounded-xl border border-sky-100 overflow-hidden shadow-sm">
             <div className="bg-blue-900 px-4 py-2.5 flex items-center justify-between">
@@ -242,12 +253,67 @@ export default function PublicCanvas({
               />
             </div>
           </div>
+
+          {/* Kolom 3: Aparatus Kritis */}
+          <div className="bg-white rounded-xl border border-sky-100 overflow-hidden shadow-sm">
+            <div className="bg-slate-700 px-4 py-2.5 flex items-center justify-between">
+              <div>
+                <p className="text-[11px] font-bold text-white uppercase tracking-wider">
+                  Aparatus Kritis
+                </p>
+                <p className="text-[9px] text-slate-300 uppercase tracking-wider">
+                  Catatan Filologis
+                </p>
+              </div>
+              <span className="px-2 py-0.5 bg-white/20 text-white rounded text-[9px] font-medium uppercase tracking-wide">
+                Catatan
+              </span>
+            </div>
+            <div className="p-4">
+              {fullApparatus && fullApparatus.trim() ? (
+                <div className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                  {fullApparatus}
+                </div>
+              ) : annotations.some((a) => a.notes) ? (
+                <ul className="space-y-2 text-sm text-slate-700">
+                  {annotations
+                    .filter((a) => a.notes)
+                    .map((a, i) => (
+                      <li
+                        key={a.id}
+                        className="flex gap-2 cursor-pointer hover:bg-sky-50 rounded px-1 -mx-1 py-0.5 transition"
+                        onMouseEnter={() => setHoveredAnn(a)}
+                        onMouseLeave={() => setHoveredAnn(null)}
+                        onClick={() =>
+                          setSelectedAnn(selectedAnn?.id === a.id ? null : a)
+                        }
+                      >
+                        <span className="text-[10px] font-bold text-slate-500 shrink-0 mt-0.5">
+                          {i + 1}.
+                        </span>
+                        <div>
+                          <span className="font-medium text-blue-900">
+                            {a.transliteration}
+                          </span>
+                          <span className="text-slate-500"> — </span>
+                          <span className="italic">{a.notes}</span>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-slate-400 italic">
+                  Belum ada aparatus kritis untuk halaman ini.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
       <p className="text-xs text-slate-500">
         💡 Arahkan kursor ke kata berwarna di paragraf untuk melihat posisinya
-        di gambar naskah.
+        di gambar naskah. Klik untuk detail lengkap.
       </p>
 
       {/* Detail panel */}
@@ -350,8 +416,7 @@ function HighlightedParagraph({
         const ann = clean ? wordMap.get(clean) : null;
 
         if (ann) {
-          const isActive =
-            ann.id === hoveredId || ann.id === selectedId;
+          const isActive = ann.id === hoveredId || ann.id === selectedId;
           const baseColor =
             field === "transliteration"
               ? "bg-amber-100 text-blue-900 border-b-2 border-amber-400"
