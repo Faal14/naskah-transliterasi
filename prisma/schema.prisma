@@ -34,42 +34,66 @@ enum AnnotationStatus {
   REJECTED
 }
 
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  name         String
-  password     String
-  role         Role         @default(READER)
-  status       UserStatus   @default(PENDING)
-  cvUrl        String?
-  expertise    String[]     @default([])
-  createdAt    DateTime     @default(now())
-  annotations  Annotation[]
-  reviews      Review[]
+  id                 String       @id @default(cuid())
+  email              String       @unique
+  name               String
+  password           String
+  role               Role         @default(READER)
+  status             UserStatus   @default(PENDING)
+  cvUrl              String?
+  expertise          String[]     @default([])
+  institution        String?
+  department         String?
+  bio                String?
+  createdAt          DateTime     @default(now())
+  annotations        Annotation[]
+  reviews            Review[]
+  ratings            Rating[]
+  comments           Comment[]
+  lockedManuscripts  Manuscript[] @relation("ManuscriptLock")
 }
 
 model Manuscript {
-  id          String   @id @default(cuid())
-  title       String
-  script      String
-  year        String?
-  source      String?
-  description String?
-  createdAt   DateTime @default(now())
-  pages       Page[]
+  id           String     @id @default(cuid())
+  title        String
+  script       String
+  language     String?
+  author       String?
+  period       String?
+  mediaType    String?
+  dimensions   String?
+  year         String?
+  source       String?
+  description  String?
+  createdAt    DateTime   @default(now())
+  lockedById   String?
+  lockedBy     User?      @relation("ManuscriptLock", fields: [lockedById], references: [id], onDelete: SetNull)
+  lockedAt     DateTime?
+  pages        Page[]
+  ratings      Rating[]
+  comments     Comment[]
 }
 
 model Page {
-  id            String       @id @default(cuid())
-  manuscriptId  String
-  manuscript    Manuscript   @relation(fields: [manuscriptId], references: [id], onDelete: Cascade)
-  pageNumber    Int
-  imageUrl      String
-  width         Int
-  height        Int
-  status        PageStatus   @default(UNTRANSLATED)
-  createdAt     DateTime     @default(now())
-  annotations   Annotation[]
+  id                   String       @id @default(cuid())
+  manuscriptId         String
+  manuscript           Manuscript   @relation(fields: [manuscriptId], references: [id], onDelete: Cascade)
+  pageNumber           Int
+  imageUrl             String
+  width                Int
+  height               Int
+  status               PageStatus   @default(UNTRANSLATED)
+  fullTransliteration  String?
+  fullTranslation      String?
+  createdAt            DateTime     @default(now())
+  annotations          Annotation[]
 
   @@unique([manuscriptId, pageNumber])
 }
@@ -103,4 +127,55 @@ model Review {
   decision      AnnotationStatus
   comment       String?
   createdAt     DateTime         @default(now())
+}
+
+model Rating {
+  id            String     @id @default(cuid())
+  manuscriptId  String
+  manuscript    Manuscript @relation(fields: [manuscriptId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score         Int
+  createdAt     DateTime   @default(now())
+
+  @@unique([manuscriptId, userId])
+}
+
+model Comment {
+  id            String        @id @default(cuid())
+  manuscriptId  String
+  manuscript    Manuscript    @relation(fields: [manuscriptId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  guestName     String?
+  guestEmail    String?
+  content       String
+  status        CommentStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+
+  @@index([manuscriptId])
+}
+
+// ==================== RATING & REVIEW PLATFORM ====================
+
+model PlatformRating {
+  id          String   @id @default(cuid())
+  userId      String?
+  guestId     String?
+  score       Int
+  createdAt   DateTime @default(now())
+
+  @@index([guestId])
+  @@index([userId])
+}
+
+model PlatformReview {
+  id          String   @id @default(cuid())
+  userId      String?
+  guestId     String?
+  displayName String
+  content     String
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
 }

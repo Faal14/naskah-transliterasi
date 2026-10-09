@@ -4,7 +4,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import PublicCanvas from "@/components/public-canvas";
-import { formatScript } from "@/lib/script-label";
+import RatingStars from "@/components/rating-stars";
+import SiteHeader from "@/components/site-header";
+import SiteFooter from "@/components/site-footer";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function PublicManuscriptPage({
   params,
@@ -39,6 +42,20 @@ export default async function PublicManuscriptPage({
   });
 
   if (!manuscript) notFound();
+
+  const ratings = await prisma.rating.findMany({
+    where: { manuscriptId: id },
+    select: { score: true, userId: true },
+  });
+
+  const totalRatings = ratings.length;
+  const averageScore =
+    totalRatings > 0
+      ? ratings.reduce((sum, r) => sum + r.score, 0) / totalRatings
+      : 0;
+  const userScore = user
+    ? ratings.find((r) => r.userId === user.id)?.score || null
+    : null;
 
   const currentPage = manuscript.pages.find(
     (pg) => pg.pageNumber === pageNum
@@ -75,58 +92,7 @@ export default async function PublicManuscriptPage({
 
   return (
     <div className="min-h-screen bg-sky-50">
-      <header className="bg-blue-900 shadow-lg sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white font-bold text-lg">
-              L
-            </span>
-            <div>
-              <p className="font-bold text-white text-lg leading-tight tracking-wide">
-                LONTAR
-              </p>
-              <p className="text-xs text-sky-200">
-                Literasi Online, Naskah Transliterasi &amp; Alih-bahasa
-              </p>
-            </div>
-          </Link>
-          <nav className="flex gap-4 items-center text-sm">
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-sky-100 hover:text-white transition font-medium"
-                >
-                  Dashboard
-                </Link>
-                {user.role === "ADMIN" && (
-                  <Link
-                    href="/admin"
-                    className="text-sky-100 hover:text-white transition font-medium"
-                  >
-                    Admin
-                  </Link>
-                )}
-                {user.role === "CONTRIBUTOR" && user.status === "APPROVED" && (
-                  <Link
-                    href="/kontributor"
-                    className="text-sky-100 hover:text-white transition font-medium"
-                  >
-                    Ruang Kerja
-                  </Link>
-                )}
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-teal-500 text-white px-4 py-1.5 rounded-lg hover:bg-teal-600 transition font-medium"
-              >
-                Masuk
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="max-w-6xl mx-auto px-6 py-8">
         <div className="mb-6">
@@ -144,11 +110,9 @@ export default async function PublicManuscriptPage({
 
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600 items-center">
               <span
-                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  manuscript.script === "PEGON"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-teal-100 text-teal-800"
-                }`}
+                className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                  manuscript.script
+                )}`}
               >
                 {formatScript(manuscript.script)}
               </span>
@@ -166,6 +130,16 @@ export default async function PublicManuscriptPage({
               </p>
             )}
           </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto mb-6">
+          <RatingStars
+            manuscriptId={id}
+            initialUserScore={userScore}
+            averageScore={averageScore}
+            totalRatings={totalRatings}
+            isLoggedIn={!!user}
+          />
         </div>
 
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -204,32 +178,16 @@ export default async function PublicManuscriptPage({
         </div>
 
         <div className="max-w-4xl mx-auto">
-          {annotations.length === 0 ? (
-            <div className="bg-white border border-sky-100 rounded-xl overflow-hidden shadow-sm">
-              <img
-                src={imageUrl}
-                alt="Naskah"
-                className="w-full block"
-                draggable={false}
-              />
-              <div className="p-4 text-center text-sm text-slate-500 bg-sky-50 border-t border-sky-100">
-                Belum ada transliterasi yang diverifikasi untuk halaman ini.
-              </div>
-            </div>
-          ) : (
-            <PublicCanvas imageUrl={imageUrl} annotations={annotations} />
-          )}
+          <PublicCanvas
+            imageUrl={imageUrl}
+            annotations={annotations}
+            fullTransliteration={currentPage.fullTransliteration || ""}
+            fullTranslation={currentPage.fullTranslation || ""}
+          />
         </div>
       </main>
 
-      <footer className="bg-blue-900 text-sky-100 mt-12">
-        <div className="max-w-6xl mx-auto px-6 py-8 text-center text-sm">
-          <p className="font-bold text-white mb-1 tracking-wide">LONTAR</p>
-          <p className="text-xs">
-            Literasi Online, Naskah Transliterasi, dan Alih-bahasa untuk Riset
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

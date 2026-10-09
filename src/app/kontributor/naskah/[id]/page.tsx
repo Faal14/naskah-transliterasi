@@ -2,8 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import AnnotationCanvas from "@/components/annotation-canvas";
+import { auth } from "@/auth";
 import SubmitButton from "./submit-button";
+import WorkArea from "./work-area";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function WorkPage({
   params,
@@ -16,14 +18,47 @@ export default async function WorkPage({
   const { p } = await searchParams;
   const pageNum = Math.max(1, parseInt(p || "1"));
 
+  const session = await auth();
+  const user = session!.user as any;
+
   const manuscript = await prisma.manuscript.findUnique({
     where: { id },
     include: {
+      lockedBy: { select: { id: true, name: true } },
       pages: { orderBy: { pageNumber: "asc" } },
     },
   });
 
   if (!manuscript) notFound();
+
+  const isLockedByOther =
+    manuscript.lockedById !== null &&
+    manuscript.lockedById !== user.id &&
+    user.role !== "ADMIN";
+
+  if (isLockedByOther) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-8 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-xl font-bold text-amber-900 mb-2">
+            Naskah Sedang Dikerjakan
+          </h1>
+          <p className="text-amber-800 mb-6">
+            Naskah ini sedang dikerjakan oleh{" "}
+            <strong>{manuscript.lockedBy?.name}</strong>. Anda tidak dapat
+            membuat anotasi sampai naskah dilepas.
+          </p>
+          <Link
+            href="/kontributor"
+            className="inline-block bg-amber-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-amber-700 transition"
+          >
+            ← Kembali ke Daftar Naskah
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const currentPage = manuscript.pages.find(
     (pg) => pg.pageNumber === pageNum
@@ -63,15 +98,13 @@ export default async function WorkPage({
                 {manuscript.title}
               </h1>
             </div>
-            <div className="flex gap-3 mt-2 text-sm text-slate-600 ml-4">
+            <div className="flex gap-3 mt-2 text-sm text-slate-600 ml-4 items-center flex-wrap">
               <span
-                className={`px-2 py-0.5 rounded text-xs font-medium ${
-                  manuscript.script === "PEGON"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-teal-100 text-teal-800"
-                }`}
+                className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                  manuscript.script
+                )}`}
               >
-                {manuscript.script}
+                {formatScript(manuscript.script)}
               </span>
               <span>
                 Halaman {pageNum} dari {totalPages}
@@ -115,9 +148,11 @@ export default async function WorkPage({
       </div>
 
       <div className="max-w-4xl mx-auto">
-        <AnnotationCanvas
+        <WorkArea
           pageId={currentPage.id}
           imageUrl={imageUrl}
+          imageWidth={currentPage.width}
+          imageHeight={currentPage.height}
           initialAnnotations={annotations.map((a) => ({
             id: a.id,
             x: a.x,
@@ -130,6 +165,8 @@ export default async function WorkPage({
             pegonText: a.pegonText,
             status: a.status,
           }))}
+          initialTransliteration={currentPage.fullTransliteration || ""}
+          initialTranslation={currentPage.fullTranslation || ""}
         />
       </div>
     </div>

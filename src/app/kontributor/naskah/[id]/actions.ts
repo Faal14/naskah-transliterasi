@@ -59,19 +59,15 @@ export async function updateAnnotation(
 ) {
   const user = await checkAuth();
 
-  // Ambil anotasi dulu untuk cek ownership
   const existing = await prisma.annotation.findUnique({
     where: { id },
   });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
-  // Hanya owner atau admin yang bisa edit
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
     throw new Error("Anda tidak berhak mengedit anotasi ini");
   }
 
-  // Kalau anotasi sudah SUBMITTED / APPROVED, reset ke DRAFT
-  // supaya admin review ulang setelah diedit
   const newStatus =
     existing.status === "SUBMITTED" || existing.status === "APPROVED"
       ? "DRAFT"
@@ -100,12 +96,10 @@ export async function deleteAnnotation(id: string) {
   });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
-  // Hanya owner atau admin yang bisa hapus
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
     throw new Error("Anda tidak berhak menghapus anotasi ini");
   }
 
-  // Jangan izinkan hapus anotasi yang sudah APPROVED (harus kontak admin)
   if (existing.status === "APPROVED") {
     throw new Error(
       "Anotasi yang sudah disetujui tidak bisa dihapus. Hubungi admin."
@@ -132,4 +126,25 @@ export async function submitPage(pageId: string) {
 
   revalidatePath(`/kontributor/naskah`);
   return { success: true, count: result.count };
+}
+
+// ============ BARU: Save Paragraf Utuh ============
+export async function saveFullText(
+  pageId: string,
+  fullTransliteration: string,
+  fullTranslation: string
+) {
+  await checkAuth();
+
+  await prisma.page.update({
+    where: { id: pageId },
+    data: {
+      fullTransliteration: fullTransliteration || null,
+      fullTranslation: fullTranslation || null,
+    },
+  });
+
+  revalidatePath(`/kontributor/naskah`);
+  revalidatePath(`/naskah`);
+  return { success: true };
 }

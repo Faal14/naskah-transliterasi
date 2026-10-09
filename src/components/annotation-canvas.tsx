@@ -26,6 +26,10 @@ type Props = {
   imageWidth: number;
   imageHeight: number;
   initialAnnotations: Annotation[];
+  onAnnotationCreated?: (ann: {
+    transliteration: string;
+    translation: string;
+  }) => void;
 };
 
 type Draft = {
@@ -41,6 +45,7 @@ export default function AnnotationCanvas({
   imageWidth,
   imageHeight,
   initialAnnotations,
+  onAnnotationCreated,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [annotations, setAnnotations] =
@@ -148,6 +153,14 @@ export default function AnnotationCanvas({
         setAnnotations([...annotations, result.annotation as Annotation]);
         cancelForm();
         flashSuccess("✅ Anotasi baru tersimpan");
+
+        // Auto-append ke paragraf utuh
+        if (onAnnotationCreated) {
+          onAnnotationCreated({
+            transliteration: formData.transliteration,
+            translation: formData.translation,
+          });
+        }
       }
     } catch (err: any) {
       setError(err.message || "Gagal menyimpan");
@@ -228,14 +241,12 @@ export default function AnnotationCanvas({
 
   return (
     <div className="space-y-3">
-      {/* Notifikasi sukses */}
       {successMsg && (
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-start gap-2">
           <span>{successMsg}</span>
         </div>
       )}
 
-      {/* Info kalau ada anotasi berstatus SUBMITTED/APPROVED */}
       {annotations.some(
         (a) => a.status === "SUBMITTED" || a.status === "APPROVED"
       ) && (
@@ -364,8 +375,7 @@ export default function AnnotationCanvas({
               onCancel={cancelForm}
               onDelete={formMode === "edit" ? handleDelete : undefined}
               canDelete={
-                formMode === "edit" &&
-                selected?.status !== "APPROVED"
+                formMode === "edit" && selected?.status !== "APPROVED"
               }
             />
           </div>

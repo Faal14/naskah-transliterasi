@@ -20,34 +20,39 @@ function LoginForm() {
     setLoading(true);
     setError("");
 
-    const res = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
 
-    if (res?.error) {
+      if (res?.error) {
+        setLoading(false);
+        setError("Email atau password salah");
+        return;
+      }
+
+      const session = await getSession();
+      const user = session?.user as any;
+      const role = user?.role;
+      const status = user?.status;
+
+      let target = "/dashboard";
+      if (callbackUrl && callbackUrl !== "/dashboard" && callbackUrl !== "/") {
+        target = callbackUrl;
+      } else if (role === "ADMIN") {
+        target = "/admin";
+      } else if (role === "CONTRIBUTOR" && status === "APPROVED") {
+        target = "/kontributor";
+      }
+
+      router.push(target);
+      router.refresh();
+    } catch (err: any) {
       setLoading(false);
-      setError("Email atau password salah");
-      return;
+      setError(err.message || "Terjadi kesalahan");
     }
-
-    const session = await getSession();
-    const user = session?.user as any;
-    const role = user?.role;
-    const status = user?.status;
-
-    let target = "/dashboard";
-    if (callbackUrl && callbackUrl !== "/dashboard" && callbackUrl !== "/") {
-      target = callbackUrl;
-    } else if (role === "ADMIN") {
-      target = "/admin";
-    } else if (role === "CONTRIBUTOR" && status === "APPROVED") {
-      target = "/kontributor";
-    }
-
-    router.push(target);
-    router.refresh();
   }
 
   return (
@@ -111,9 +116,9 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-800 to-blue-900 text-white py-2.5 rounded-lg font-medium hover:from-blue-900 hover:to-blue-950 disabled:opacity-50 shadow-md transition"
+              className="w-full bg-gradient-to-r from-blue-800 to-blue-900 text-white py-3 rounded-lg font-bold hover:from-blue-900 hover:to-blue-950 disabled:opacity-50 shadow-md transition"
             >
-              {loading ? "Memproses..." : "Masuk"}
+              {loading ? "⏳ Memproses..." : "Masuk"}
             </button>
           </form>
 

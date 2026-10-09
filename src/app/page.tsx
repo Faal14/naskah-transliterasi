@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { auth } from "@/auth";
+import SiteHeader from "@/components/site-header";
+import SiteFooter from "@/components/site-footer";
+import PlatformRatingSection from "@/components/platform-rating-section";
 import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function HomePage() {
@@ -73,61 +76,8 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-sky-50">
-      {/* ============ HEADER ============ */}
-      <header className="bg-blue-900 shadow-lg sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white font-bold text-lg">
-              L
-            </span>
-            <div>
-              <p className="font-bold text-white text-lg leading-tight tracking-wide">
-                LONTAR
-              </p>
-              <p className="text-xs text-sky-200">
-                Literasi Online, Naskah Transliterasi &amp; Alih-bahasa
-              </p>
-            </div>
-          </Link>
-          <nav className="flex gap-4 items-center text-sm">
-            {user ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="text-sky-100 hover:text-white transition font-medium"
-                >
-                  Dashboard
-                </Link>
-                {user.role === "ADMIN" && (
-                  <Link
-                    href="/admin"
-                    className="text-sky-100 hover:text-white transition font-medium"
-                  >
-                    Admin
-                  </Link>
-                )}
-                {user.role === "CONTRIBUTOR" && user.status === "APPROVED" && (
-                  <Link
-                    href="/kontributor"
-                    className="text-sky-100 hover:text-white transition font-medium"
-                  >
-                    Ruang Kerja
-                  </Link>
-                )}
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="bg-teal-500 text-white px-4 py-1.5 rounded-lg hover:bg-teal-600 transition font-medium"
-              >
-                Masuk
-              </Link>
-            )}
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
-      {/* ============ HERO ============ */}
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-teal-700 text-white">
         <div className="max-w-6xl mx-auto px-6 py-20 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 mb-4">
@@ -151,31 +101,58 @@ export default async function HomePage() {
             </p>
             <p className="text-sky-100 text-base md:text-lg leading-relaxed">
               Platform literasi digital untuk penelitian naskah kuno berbagai
-              aksara Nusantara — dikerjakan secara kolaboratif oleh kontributor
-              terverifikasi.
+              aksara Nusantara — dikerjakan secara kolaboratif oleh
+              kontributor terverifikasi.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3 justify-center">
-            <Link
-              href="#koleksi"
-              className="bg-teal-500 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-teal-600 transition shadow-md"
-            >
-              Lihat Koleksi
-            </Link>
-            {!user && (
-              <Link
-                href="/register"
-                className="bg-white/10 backdrop-blur border border-white/30 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-white/20 transition"
-              >
-                Jadi Kontributor
-              </Link>
+            {!user ? (
+              <>
+                <Link
+                  href="/login"
+                  className="bg-teal-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-teal-600 transition shadow-md text-base"
+                >
+                  🔑 Masuk ke Akun
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/20 transition text-base"
+                >
+                  ✍️ Daftar Kontributor
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="bg-teal-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-teal-600 transition shadow-md text-base"
+                >
+                  📊 Dashboard Saya
+                </Link>
+                {user.role === "ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/20 transition text-base"
+                  >
+                    ⚙️ Admin Panel
+                  </Link>
+                )}
+                {user.role === "CONTRIBUTOR" &&
+                  user.status === "APPROVED" && (
+                    <Link
+                      href="/kontributor"
+                      className="bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/20 transition text-base"
+                    >
+                      ✍️ Ruang Kerja
+                    </Link>
+                  )}
+              </>
             )}
           </div>
         </div>
       </section>
 
-      {/* ============ STATISTIK ============ */}
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
@@ -205,7 +182,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ KOLEKSI ============ */}
       <section id="koleksi" className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -226,9 +202,6 @@ export default async function HomePage() {
             <p className="text-slate-600 mb-2 font-medium">
               Belum ada naskah yang siap dibaca publik.
             </p>
-            <p className="text-sm text-slate-400">
-              Naskah akan muncul di sini setelah anotasinya diverifikasi admin.
-            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -238,7 +211,6 @@ export default async function HomePage() {
                 href={`/naskah/${m.id}`}
                 className="group bg-white rounded-xl border border-sky-100 p-5 hover:border-teal-400 hover:shadow-lg transition-all flex flex-col"
               >
-                {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg leading-tight text-slate-900">
                     {m.title}
@@ -252,34 +224,28 @@ export default async function HomePage() {
                   </span>
                 </div>
 
-                {/* Meta */}
                 <div className="text-sm text-slate-700 space-y-1 mb-3">
                   {m.year && <p>Tahun: {m.year}</p>}
                   {m.source && <p>Sumber: {m.source}</p>}
                 </div>
 
-                {/* Deskripsi dengan background gambar naskah */}
                 <div className="relative flex-1 rounded-lg overflow-hidden min-h-[110px] mb-4">
                   {m.firstPageUrl && (
                     <>
                       <div
                         className="absolute inset-0 bg-cover bg-center opacity-70"
-                        style={{
-                          backgroundImage: `url(${m.firstPageUrl})`,
-                        }}
+                        style={{ backgroundImage: `url(${m.firstPageUrl})` }}
                       ></div>
                       <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/60 to-white/95"></div>
                     </>
                   )}
                   <div className="relative p-3 flex items-end h-full min-h-[110px]">
                     <p className="text-sm text-slate-800 font-medium line-clamp-3 drop-shadow-sm">
-                      {m.description ||
-                        "Belum ada deskripsi untuk naskah ini."}
+                      {m.description || "Belum ada deskripsi untuk naskah ini."}
                     </p>
                   </div>
                 </div>
 
-                {/* Footer */}
                 <div className="flex gap-4 text-xs text-slate-500 pt-3 border-t border-sky-50">
                   <span className="font-medium text-teal-700">
                     {m.stats.totalApproved} kata diterjemahkan
@@ -294,7 +260,6 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* ============ CARA KERJA ============ */}
       <section className="bg-white border-y border-sky-100 py-16">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10">
@@ -339,7 +304,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ FITUR UTAMA ============ */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -358,7 +322,7 @@ export default async function HomePage() {
           <FeatureCard
             icon="🎯"
             title="Multi Aksara Nusantara"
-            desc="Mendukung berbagai aksara Nusantara — Pegon, Carakan, Jawi, Bali, dan aksara daerah lainnya dalam satu platform."
+            desc="Mendukung berbagai aksara Nusantara — Pegon, Carakan, dan aksara daerah lainnya dalam satu platform."
           />
           <FeatureCard
             icon="👥"
@@ -388,96 +352,41 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ CTA ============ */}
       {!user && (
         <section className="bg-gradient-to-r from-blue-900 to-teal-700 py-16">
           <div className="max-w-3xl mx-auto px-6 text-center text-white">
             <h2 className="text-2xl md:text-3xl font-bold mb-3">
-              Ingin Berkontribusi?
+              Siap Berkontribusi?
             </h2>
-            <p className="text-sky-100 mb-6">
+            <p className="text-sky-100 mb-6 max-w-xl mx-auto">
               Bergabunglah sebagai kontributor untuk melestarikan naskah
-              Nusantara. Daftar gratis, admin akan memverifikasi akun Anda.
+              Nusantara. Daftar gratis, admin akan memverifikasi akun Anda
+              dalam 1×24 jam.
             </p>
-            <Link
-              href="/register"
-              className="inline-block bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-sky-100 transition shadow-md"
-            >
-              Daftar Sekarang
-            </Link>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link
+                href="/register"
+                className="inline-block bg-white text-blue-900 px-8 py-3 rounded-lg font-semibold hover:bg-sky-100 transition shadow-md"
+              >
+                Daftar Sekarang
+              </Link>
+              <Link
+                href="/login"
+                className="inline-block bg-white/10 backdrop-blur border border-white/30 text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/20 transition"
+              >
+                Sudah Punya Akun? Masuk
+              </Link>
+            </div>
           </div>
         </section>
       )}
 
-      {/* ============ FOOTER ============ */}
-      <footer className="bg-blue-900 text-sky-100">
-        <div className="max-w-6xl mx-auto px-6 py-10">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-teal-500 text-white font-bold text-lg">
-                  L
-                </span>
-                <p className="font-bold text-white text-lg tracking-wide">
-                  LONTAR
-                </p>
-              </div>
-              <p className="text-sm text-sky-200">
-                <strong className="text-white">LONTAR</strong> — Literasi
-                Online, Naskah Transliterasi, dan Alih-bahasa untuk Riset.
-              </p>
-            </div>
-            <div>
-              <p className="font-semibold text-white mb-3">Navigasi</p>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link href="/" className="hover:text-white transition">
-                    Beranda
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="#koleksi"
-                    className="hover:text-white transition"
-                  >
-                    Koleksi Naskah
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/register"
-                    className="hover:text-white transition"
-                  >
-                    Daftar Kontributor
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/login"
-                    className="hover:text-white transition"
-                  >
-                    Masuk
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-semibold text-white mb-3">Tentang</p>
-              <p className="text-sm text-sky-200">
-                Dikembangkan oleh Tim Literasi Inovasi Teknologi OASE 2026.
-              </p>
-              <p className="text-xs text-sky-300 mt-3">
-                Lisensi kode: MIT · Data: CC BY-SA 4.0
-              </p>
-            </div>
-          </div>
+      {/* ============ RATING & REVIEW PLATFORM ============ */}
+      <PlatformRatingSection
+        currentUser={user ? { name: user.name } : null}
+      />
 
-          <div className="pt-6 border-t border-blue-800 text-center text-xs text-sky-300">
-            © 2026 LONTAR · Literasi Online, Naskah Transliterasi, dan
-            Alih-bahasa untuk Riset
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
