@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { clientIp, rateLimit, HOUR } from "@/lib/rate-limit";
 
 // GET — ambil semua rating + review
 export async function GET(req: Request) {
@@ -40,6 +41,14 @@ export async function GET(req: Request) {
 
 // POST — submit rating &/atau review
 export async function POST(req: Request) {
+  const limited = rateLimit(`feedback:${clientIp(req.headers)}`, 10, HOUR);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Terlalu banyak kiriman. Coba lagi nanti." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const {

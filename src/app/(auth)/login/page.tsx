@@ -29,7 +29,11 @@ function LoginForm() {
 
       if (res?.error) {
         setLoading(false);
-        setError("Email atau password salah");
+        setError(
+          res.code === "rate_limited"
+            ? "Terlalu banyak percobaan. Coba lagi dalam 15 menit."
+            : "Email atau password salah"
+        );
         return;
       }
 

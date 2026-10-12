@@ -3,8 +3,17 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validators";
+import { clientIp, rateLimit, HOUR } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const limited = rateLimit(`register:${clientIp(req.headers)}`, 5, HOUR);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Terlalu banyak pendaftaran. Coba lagi nanti." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
+    );
+  }
+
   try {
     const body = await req.json();
     const data = registerSchema.parse(body);

@@ -1,7 +1,12 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { rateLimit, resetRateLimit, MINUTE } from "@/lib/rate-limit";
+
+class RateLimitedSignin extends CredentialsSignin {
+  code = "rate_limited";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -18,6 +23,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // 5 percobaan per 15 menit per email; dihapus saat login berhasil.
+        const limitKey = `login:${String(credentials.email).trim().toLowerCase()}`;
+        if (!rateLimit(limitKey, 5, 15 * MINUTE).ok) {
+          throw new RateLimitedSignin();
+        }
+
         try {
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
@@ -30,6 +41,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.password
           );
           if (!valid) return null;
+
+          resetRateLimit(limitKey);
 
           return {
             id: user.id,
