@@ -77,9 +77,9 @@ npm install
 
 # 3. Buat file .env dari template
 cp .env.example .env
-# Isi dengan kredensial Supabase Anda
+# Isi semua variabel di .env (lihat keterangan tiap variabel di .env.example)
 
-# 4. Migrasi database
+# 4. Migrasi database (pengembangan lokal)
 npx prisma migrate dev
 
 # 5. Seed admin pertama
@@ -91,12 +91,15 @@ npm run dev
 
 Buka http://localhost:3000
 
-### Akun Demo
-- **Admin**: `admin@naskah.id` / `admin123`
+### Migrasi database: lokal vs produksi
 
----
-
-```
+- **Lokal (pengembangan):** `npx prisma migrate dev`. Perintah ini membuat file
+  migrasi baru bila skema berubah dan dapat meminta reset database, jadi hanya
+  untuk database pengembangan.
+- **Produksi / server:** `npx prisma migrate deploy`. Perintah ini hanya
+  menerapkan migrasi yang sudah ada di `prisma/migrations`, tanpa membuat
+  migrasi baru dan tanpa reset. Jangan menjalankan `migrate dev` terhadap
+  database produksi.
 
 ---
 
