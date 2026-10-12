@@ -8,10 +8,33 @@ class RateLimitedSignin extends CredentialsSignin {
   code = "rate_limited";
 }
 
+// Host kampus dipakai bersama aplikasi lain: cookie diberi nama unik dan dibatasi ke
+// basePath supaya tidak bentrok dan tidak ikut terkirim ke aplikasi lain.
+// (__Host- tidak dipakai karena mewajibkan Path=/.)
+const cookiePath = process.env.NEXT_PUBLIC_BASE_PATH || "/";
+const secureCookies = (process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "").startsWith(
+  "https://"
+);
+const authCookie = (name: string) => ({
+  name: `${secureCookies ? "__Secure-" : ""}oase1-lontar.${name}`,
+  options: {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    path: cookiePath,
+    secure: secureCookies,
+  },
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   trustHost: true,
+  useSecureCookies: secureCookies,
+  cookies: {
+    sessionToken: authCookie("session-token"),
+    callbackUrl: authCookie("callback-url"),
+    csrfToken: authCookie("csrf-token"),
+  },
   providers: [
     Credentials({
       credentials: {
