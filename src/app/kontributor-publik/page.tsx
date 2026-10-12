@@ -108,9 +108,10 @@ export default async function KontributorPublikPage() {
                 .toUpperCase();
 
               return (
-                <div
+                <Link
                   key={c.id}
-                  className="bg-white rounded-xl border border-sky-100 p-5 shadow-sm hover:shadow-md hover:border-teal-300 transition"
+                  href={`/kontributor-publik/${c.id}`}
+                  className="group bg-white rounded-xl border border-sky-100 p-5 shadow-sm hover:shadow-lg hover:border-teal-400 transition-all"
                 >
                   {/* Avatar + nama */}
                   <div className="flex items-start gap-4 mb-4">
@@ -118,7 +119,7 @@ export default async function KontributorPublikPage() {
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-slate-900 text-lg leading-tight truncate">
+                      <h3 className="font-bold text-slate-900 text-lg leading-tight truncate group-hover:text-teal-700 transition">
                         {c.name}
                       </h3>
                       {c.institution && (
@@ -183,7 +184,12 @@ export default async function KontributorPublikPage() {
                       </p>
                     </div>
                   </div>
-                </div>
+
+                  {/* Hint */}
+                  <p className="text-[10px] text-teal-600 font-medium mt-3 text-center opacity-0 group-hover:opacity-100 transition">
+                    Klik untuk lihat profil →
+                  </p>
+                </Link>
               );
             })}
           </div>

@@ -27,7 +27,7 @@ export default async function AdminLayout({
               </span>
               <span className="text-xs text-sky-300 ml-1">· Admin</span>
             </Link>
-            <nav className="flex gap-4 text-sm">
+            <nav className="flex gap-4 text-sm flex-wrap">
               <Link
                 href="/admin/kontributor"
                 className="text-sky-100 hover:text-white transition font-medium"
@@ -45,6 +45,12 @@ export default async function AdminLayout({
                 className="text-sky-100 hover:text-white transition font-medium"
               >
                 Review Anotasi
+              </Link>
+              <Link
+                href="/admin/komentar"
+                className="text-sky-100 hover:text-white transition font-medium"
+              >
+                Komentar
               </Link>
               <Link
                 href="/admin/export"
