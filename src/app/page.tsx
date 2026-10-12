@@ -153,35 +153,49 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ============ STATISTIK ============ */}
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
         <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
-            <p className="text-3xl md:text-4xl font-bold text-blue-900">
+          <Link
+            href="#koleksi"
+            className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
+          >
+            <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {totalManuscripts}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
               Total Naskah
             </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
-            <p className="text-3xl md:text-4xl font-bold text-blue-900">
+          </Link>
+          <Link
+            href="#koleksi"
+            className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
+          >
+            <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {translatedManuscripts}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
               Naskah Ditransliterasi
             </p>
-          </div>
-          <div className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center">
-            <p className="text-3xl md:text-4xl font-bold text-blue-900">
+          </Link>
+          <Link
+            href="/kontributor-publik"
+            className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
+          >
+            <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {totalContributors}
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
               Kontributor
             </p>
-          </div>
+            <p className="text-[10px] text-teal-600 font-medium mt-1.5 opacity-0 group-hover:opacity-100 transition">
+              Lihat semua →
+            </p>
+          </Link>
         </div>
       </section>
 
+      {/* ============ KOLEKSI ============ */}
       <section id="koleksi" className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -260,6 +274,7 @@ export default async function HomePage() {
         )}
       </section>
 
+      {/* ============ CARA KERJA ============ */}
       <section className="bg-white border-y border-sky-100 py-16">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-10">
@@ -304,6 +319,7 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ============ FITUR UTAMA ============ */}
       <section className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-2">
@@ -381,7 +397,6 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* ============ RATING & REVIEW PLATFORM ============ */}
       <PlatformRatingSection
         currentUser={user ? { name: user.name } : null}
       />

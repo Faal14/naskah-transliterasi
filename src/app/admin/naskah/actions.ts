@@ -12,6 +12,7 @@ export async function createManuscript(formData: FormData) {
     return { error: "Unauthorized" };
   }
 
+  const code = formData.get("code") as string;
   const title = formData.get("title") as string;
   const script = formData.get("script") as string;
   const language = formData.get("language") as string;
@@ -19,6 +20,10 @@ export async function createManuscript(formData: FormData) {
   const period = formData.get("period") as string;
   const mediaType = formData.get("mediaType") as string;
   const dimensions = formData.get("dimensions") as string;
+  const abstract = formData.get("abstract") as string;
+  const illumination = formData.get("illumination") as string;
+  const illustration = formData.get("illustration") as string;
+  const watermark = formData.get("watermark") as string;
   const year = formData.get("year") as string;
   const source = formData.get("source") as string;
   const description = formData.get("description") as string;
@@ -35,6 +40,7 @@ export async function createManuscript(formData: FormData) {
 
   const manuscript = await prisma.manuscript.create({
     data: {
+      code: code || null,
       title,
       script,
       language: language || null,
@@ -42,6 +48,10 @@ export async function createManuscript(formData: FormData) {
       period: period || null,
       mediaType: mediaType || null,
       dimensions: dimensions || null,
+      abstract: abstract || null,
+      illumination: illumination || null,
+      illustration: illustration || null,
+      watermark: watermark || null,
       year: year || null,
       source: source || null,
       description: description || null,
@@ -86,6 +96,7 @@ export async function createManuscript(formData: FormData) {
 export async function updateManuscriptMetadata(
   id: string,
   data: {
+    code: string;
     title: string;
     script: string;
     language: string;
@@ -93,6 +104,10 @@ export async function updateManuscriptMetadata(
     period: string;
     mediaType: string;
     dimensions: string;
+    abstract: string;
+    illumination: string;
+    illustration: string;
+    watermark: string;
     year: string;
     source: string;
     description: string;
@@ -106,6 +121,7 @@ export async function updateManuscriptMetadata(
   await prisma.manuscript.update({
     where: { id },
     data: {
+      code: data.code || null,
       title: data.title,
       script: data.script,
       language: data.language || null,
@@ -113,6 +129,10 @@ export async function updateManuscriptMetadata(
       period: data.period || null,
       mediaType: data.mediaType || null,
       dimensions: data.dimensions || null,
+      abstract: data.abstract || null,
+      illumination: data.illumination || null,
+      illustration: data.illustration || null,
+      watermark: data.watermark || null,
       year: data.year || null,
       source: data.source || null,
       description: data.description || null,

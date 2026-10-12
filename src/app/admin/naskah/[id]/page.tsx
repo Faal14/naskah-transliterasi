@@ -15,6 +15,7 @@ export default async function ManuscriptDetailPage({
     where: { id },
     include: {
       pages: { orderBy: { pageNumber: "asc" } },
+      _count: { select: { ratings: true, comments: true } },
     },
   });
 
@@ -51,6 +52,11 @@ export default async function ManuscriptDetailPage({
             {manuscript.title}
           </h1>
         </div>
+        {manuscript.code && (
+          <p className="text-sm text-slate-500 mt-1 ml-4 font-mono">
+            Kode: {manuscript.code}
+          </p>
+        )}
         <div className="flex gap-3 mt-3 text-sm text-slate-600 ml-4 flex-wrap items-center">
           <span
             className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
@@ -65,13 +71,61 @@ export default async function ManuscriptDetailPage({
             {manuscript.pages.length} halaman
           </span>
         </div>
-        {manuscript.description && (
-          <p className="text-sm text-slate-600 mt-3 ml-4 max-w-3xl">
-            {manuscript.description}
-          </p>
-        )}
       </div>
 
+      {/* ============ METADATA DETAIL ============ */}
+      <div className="bg-white rounded-xl border border-sky-100 shadow-sm overflow-hidden mb-6">
+        <div className="bg-sky-50 px-5 py-3 border-b border-sky-100">
+          <h2 className="font-bold text-blue-900 text-sm">
+            📋 Metadata Naskah
+          </h2>
+        </div>
+        <div className="p-5 grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+          <Row label="Kode Naskah" value={manuscript.code} />
+          <Row label="Judul" value={manuscript.title} />
+          <Row label="Aksara" value={formatScript(manuscript.script)} />
+          <Row label="Bahasa" value={manuscript.language} />
+          <Row label="Pengarang / Penulis" value={manuscript.author} />
+          <Row label="Tahun / Periode" value={manuscript.period} />
+          <Row label="Tahun (Angka)" value={manuscript.year} />
+          <Row label="Sumber / Asal" value={manuscript.source} />
+          <Row label="Jenis Bahan" value={manuscript.mediaType} />
+          <Row label="Ukuran Kertas" value={manuscript.dimensions} />
+          <Row label="Illuminasi" value={manuscript.illumination} />
+          <Row label="Ilustrasi" value={manuscript.illustration} />
+          <Row label="Watermark" value={manuscript.watermark} />
+          <Row
+            label="Jumlah Halaman"
+            value={`${manuscript.pages.length} halaman`}
+          />
+          <Row
+            label="Rating"
+            value={`${manuscript._count.ratings} rating`}
+          />
+          <Row
+            label="Komentar"
+            value={`${manuscript._count.comments} komentar`}
+          />
+          {manuscript.abstract && (
+            <div className="md:col-span-2">
+              <p className="text-slate-500 text-xs mb-1">Abstrak (Isi Teks)</p>
+              <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
+                {manuscript.abstract}
+              </p>
+            </div>
+          )}
+          {manuscript.description && (
+            <div className="md:col-span-2">
+              <p className="text-slate-500 text-xs mb-1">Deskripsi</p>
+              <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
+                {manuscript.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ============ HALAMAN ============ */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-1 h-5 bg-teal-500 rounded"></div>
         <h2 className="text-lg font-bold text-blue-900">Halaman</h2>
@@ -125,6 +179,25 @@ export default async function ManuscriptDetailPage({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | null | undefined;
+}) {
+  return (
+    <div className="flex flex-col md:flex-row md:items-start gap-1 md:gap-4 border-b border-sky-50 pb-2 last:border-0">
+      <p className="text-slate-500 text-xs md:w-40 shrink-0 md:pt-0.5">
+        {label}
+      </p>
+      <p className="text-slate-800 flex-1">
+        {value || <span className="text-slate-300 italic">—</span>}
+      </p>
     </div>
   );
 }

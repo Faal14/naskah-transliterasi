@@ -61,24 +61,29 @@ model User {
 }
 
 model Manuscript {
-  id           String     @id @default(cuid())
-  title        String
-  script       String
-  language     String?
-  author       String?
-  period       String?
-  mediaType    String?
-  dimensions   String?
-  year         String?
-  source       String?
-  description  String?
-  createdAt    DateTime   @default(now())
-  lockedById   String?
-  lockedBy     User?      @relation("ManuscriptLock", fields: [lockedById], references: [id], onDelete: SetNull)
-  lockedAt     DateTime?
-  pages        Page[]
-  ratings      Rating[]
-  comments     Comment[]
+  id            String     @id @default(cuid())
+  code          String?
+  title         String
+  script        String
+  language      String?
+  author        String?
+  period        String?
+  mediaType     String?
+  dimensions    String?
+  abstract      String?
+  illumination  String?
+  illustration  String?
+  watermark     String?
+  year          String?
+  source        String?
+  description   String?
+  createdAt     DateTime   @default(now())
+  lockedById    String?
+  lockedBy      User?      @relation("ManuscriptLock", fields: [lockedById], references: [id], onDelete: SetNull)
+  lockedAt      DateTime?
+  pages         Page[]
+  ratings       Rating[]
+  comments      Comment[]
 }
 
 model Page {

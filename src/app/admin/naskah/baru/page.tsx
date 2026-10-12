@@ -77,27 +77,39 @@ export default function NewManuscriptPage() {
         onSubmit={handleSubmit}
         className="bg-white rounded-xl border border-sky-100 p-6 space-y-6 max-w-3xl shadow-sm"
       >
-        {/* ============ SECTION 1: INFO DASAR ============ */}
+        {/* ============ SECTION 1: IDENTITAS ============ */}
         <div>
           <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
-            📖 Info Dasar
+            📖 Identitas Naskah
           </h2>
 
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Judul Naskah <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="title"
-                required
-                placeholder="cth: Masā'il at-Ta'līm"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-              />
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Kode Naskah
+                </label>
+                <input
+                  type="text"
+                  name="code"
+                  placeholder="cth: MS-001 / UINSGD-01"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Judul Naskah <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  required
+                  placeholder="cth: Masā'il at-Ta'līm"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                />
+              </div>
             </div>
 
-            {/* Aksara */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Aksara <span className="text-red-500">*</span>
@@ -148,7 +160,7 @@ export default function NewManuscriptPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Penulis / Penyusun
+                  Pengarang / Penulis
                 </label>
                 <input
                   type="text"
@@ -161,7 +173,7 @@ export default function NewManuscriptPage() {
           </div>
         </div>
 
-        {/* ============ SECTION 2: METADATA FISIK ============ */}
+        {/* ============ SECTION 2: FISIK ============ */}
         <div>
           <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
             📅 Metadata Fisik
@@ -196,18 +208,18 @@ export default function NewManuscriptPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Media
+                  Jenis Bahan
                 </label>
                 <input
                   type="text"
                   name="mediaType"
-                  placeholder="cth: Kertas Daluwang, Lontar"
+                  placeholder="cth: Kertas Daluwang, Lontar, Eropa"
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Dimensi Fisik
+                  Ukuran Kertas
                 </label>
                 <input
                   type="text"
@@ -217,36 +229,86 @@ export default function NewManuscriptPage() {
                 />
               </div>
             </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Illuminasi
+                </label>
+                <select
+                  name="illumination"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                >
+                  <option value="">— Belum dicek —</option>
+                  <option value="Ya">Ya</option>
+                  <option value="Tidak">Tidak</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Ilustrasi
+                </label>
+                <input
+                  type="text"
+                  name="illustration"
+                  placeholder="cth: Ada, halaman 5"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Watermark
+                </label>
+                <input
+                  type="text"
+                  name="watermark"
+                  placeholder="cth: Cap Perpusnas"
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* ============ SECTION 3: SUMBER & DESKRIPSI ============ */}
+        {/* ============ SECTION 3: KONTEN & SUMBER ============ */}
         <div>
           <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
-            📚 Sumber & Deskripsi
+            📚 Sumber & Konten
           </h2>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Sumber / Asal
+                Sumber / Asal Koleksi
               </label>
               <input
                 type="text"
                 name="source"
-                placeholder="cth: Koleksi UIN Salatiga"
+                placeholder="cth: Koleksi UIN Salatiga, Perpusnas"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Deskripsi
+                Abstrak (Isi Teks)
+              </label>
+              <textarea
+                name="abstract"
+                rows={4}
+                placeholder="Ringkasan isi teks naskah, tema utama, atau catatan penting tentang konten..."
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Deskripsi Singkat
               </label>
               <textarea
                 name="description"
                 rows={3}
-                placeholder="Deskripsi singkat tentang naskah..."
+                placeholder="Deskripsi singkat tentang naskah (untuk tampilan di homepage)..."
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
             </div>
@@ -272,7 +334,8 @@ export default function NewManuscriptPage() {
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Urutan file = urutan halaman.
+              Urutan file = urutan halaman. Disarankan nama file urut (01.jpg,
+              02.jpg, ...)
             </p>
           </div>
 
