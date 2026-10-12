@@ -33,12 +33,14 @@ DEPLOY_PM2_NAME=oase1-lontar
 - [ ] Jawaban TIPD atas `docs/nginx-request.md` (sub-path atau subdomain, ada tidaknya
       Cloudflare, arsitektur server, izin koneksi keluar).
 - [ ] Akses SSH ke server dan hak tulis di `/var/www/mhs/oase1/`.
-- [ ] Project Supabase produksi: **project lama milik mahasiswa** (diputuskan 2026-10-13),
-      berisi data asli. Sebelum disentuh:
+- [ ] Project Supabase produksi: yang dituju adalah **project lama milik mahasiswa**
+      (berisi data asli). **Keputusan akun pemiliknya belum diambil.** Pemeriksaan berikut
+      dilakukan tepat sebelum rilis, setelah cadangan ada dan keputusan akun diambil:
   - [ ] cadangkan database dari dashboard Supabase;
-  - [ ] pastikan bucket `manuscripts` privat;
-  - [ ] pastikan kuncinya diterima aplikasi (bila masih format lama `service_role`, belum
-        pernah diuji dengan kode sekarang).
+  - [ ] bucket `manuscripts` ada dan privat;
+  - [ ] kuncinya diterima aplikasi (bila masih format lama `service_role`, belum pernah
+        diuji dengan kode sekarang);
+  - [ ] akun pengguna yang ada, terutama `admin@naskah.id` dan `test@naskah.id`.
 - [ ] `AUTH_SECRET` baru khusus produksi (`openssl rand -base64 32`); jangan memakai nilai uji.
 
 ## 1. Periksa server — [BELUM TERBUKTI]
@@ -130,7 +132,13 @@ Simpan kredensial produksi di berkas **di luar repo** (mis. `~/rahasia/oase1-pro
 - `DIRECT_URL` = **session pooler** (host pooler yang sama, port 5432, tanpa `?pgbouncer=true`).
   Host langsung `db.<ref>.supabase.co` hanya IPv6 dan tidak terjangkau dari jaringan IPv4.
 
-Urutannya wajib: status → migrate deploy → seed.
+**Status database mahasiswa:** pada Tahap A (sesi sebelumnya, dengan `.env` aslinya),
+`migrate status` dan `migrate deploy` sudah dijalankan ke sana: 8 migrasi, tidak ada yang
+tertunda. Seed **tidak** dijalankan. Jadi migrasi tidak perlu diulang selama folder
+`prisma/migrations` masih berisi 8 migrasi yang sama; jalankan lagi hanya bila ada migrasi
+baru sesudahnya.
+
+Untuk database baru, atau bila ada migrasi baru, urutannya wajib: status → migrate deploy → seed.
 
 ```bash
 cd <repo>
@@ -138,7 +146,7 @@ cd <repo>
   set -a; . ~/rahasia/oase1-prod.env; set +a
   npx prisma migrate status    # 1. lihat dulu: host benar? migrasi apa yang tertunda?
   npx prisma migrate deploy    # 2. terapkan migrasi
-  npx prisma db seed           # 3. buat admin awal
+  npx prisma db seed           # 3. buat admin awal (lewati untuk database mahasiswa)
 )
 ```
 
