@@ -33,12 +33,19 @@ export function resetRateLimit(key: string) {
   buckets.delete(key);
 }
 
-// Aplikasi berada di belakang Nginx. Entri TERAKHIR x-forwarded-for adalah alamat yang
-// dilihat Nginx; entri sebelumnya dikirim klien dan bisa dipalsukan.
+// Setiap proxy tepercaya menambahkan alamat yang dilihatnya di ujung KANAN
+// x-forwarded-for; entri di sebelah kirinya dikirim klien dan bisa dipalsukan.
+// TRUSTED_PROXY_HOPS = jumlah proxy tepercaya di depan aplikasi (bawaan 1: Nginx saja);
+// dibaca saat runtime, lalu diambil entri ke-N dari kanan.
 export function clientIp(headers: Headers) {
-  const forwarded = headers.get("x-forwarded-for");
-  const last = forwarded?.split(",").pop()?.trim();
-  return last || headers.get("x-real-ip") || "unknown";
+  const hops = Math.max(1, parseInt(process.env.TRUSTED_PROXY_HOPS ?? "1", 10) || 1);
+  const entries = (headers.get("x-forwarded-for") ?? "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  // Lebih sedikit entri daripada lompatan: pakai yang paling kiri yang tersedia.
+  const ip = entries[Math.max(0, entries.length - hops)];
+  return ip || headers.get("x-real-ip") || "unknown";
 }
 
 export const HOUR = 60 * 60 * 1000;
