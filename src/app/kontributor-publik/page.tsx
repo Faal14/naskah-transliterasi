@@ -4,6 +4,8 @@ import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import { formatScript } from "@/lib/script-label";
 
+export const dynamic = "force-dynamic";
+
 export default async function KontributorPublikPage() {
   const contributors = await prisma.user.findMany({
     where: {

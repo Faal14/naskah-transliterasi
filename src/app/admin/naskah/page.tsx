@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { formatScript } from "@/lib/script-label";
 
+export const dynamic = "force-dynamic";
+
 export default async function NaskahListPage() {
   const manuscripts = await prisma.manuscript.findMany({
     orderBy: { createdAt: "desc" },

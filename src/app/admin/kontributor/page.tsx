@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { approveUser, rejectUser } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function KontributorPage() {
   const pendingUsers = await prisma.user.findMany({
     where: { status: "PENDING" },
