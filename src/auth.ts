@@ -2,7 +2,7 @@ import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { rateLimit, resetRateLimit, MINUTE } from "@/lib/rate-limit";
+import { clientIp, rateLimit, resetRateLimit, MINUTE } from "@/lib/rate-limit";
 
 class RateLimitedSignin extends CredentialsSignin {
   code = "rate_limited";
@@ -41,14 +41,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // 5 percobaan per 15 menit per email; dihapus saat login berhasil.
-        const limitKey = `login:${String(credentials.email).trim().toLowerCase()}`;
-        if (!rateLimit(limitKey, 5, 15 * MINUTE).ok) {
+        // 20 percobaan per 15 menit per IP, dan 5 per 15 menit per email+IP (yang
+        // terakhir dihapus saat login berhasil). Kunci per email+IP mencegah orang
+        // lain mengunci akun cukup dengan mengetahui emailnya.
+        const ip = clientIp(request.headers);
+        const email = String(credentials.email).trim().toLowerCase();
+        const limitKey = `login:${email}:${ip}`;
+        if (
+          !rateLimit(`login-ip:${ip}`, 20, 15 * MINUTE).ok ||
+          !rateLimit(limitKey, 5, 15 * MINUTE).ok
+        ) {
           throw new RateLimitedSignin();
         }
 
