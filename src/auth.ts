@@ -4,6 +4,34 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { clientIp, rateLimit, resetRateLimit, MINUTE } from "@/lib/rate-limit";
 
+// Status di JWT dibuat saat login dan bisa basi (mis. kontributor ditolak sesudahnya).
+// Baca ulang dari database paling sering sekali per 5 menit per pengguna. Cache ada di
+// memori proses karena server component tidak bisa menulis ulang cookie sesi.
+const STATUS_TTL = 5 * MINUTE;
+const statusCache = new Map<
+  string,
+  { checkedAt: number; status: Promise<string | null | undefined> }
+>();
+
+// Hasil: status terbaru, null bila pengguna sudah dihapus, undefined bila database
+// tidak bisa dibaca (status lama di token dipertahankan).
+function freshStatus(userId: string) {
+  const now = Date.now();
+  const cached = statusCache.get(userId);
+  if (cached && now - cached.checkedAt < STATUS_TTL) return cached.status;
+
+  const status = prisma.user
+    .findUnique({ where: { id: userId }, select: { status: true } })
+    .then((row) => (row ? row.status : null))
+    .catch((err) => {
+      console.error("Auth status refresh:", err);
+      statusCache.delete(userId);
+      return undefined;
+    });
+  statusCache.set(userId, { checkedAt: now, status });
+  return status;
+}
+
 class RateLimitedSignin extends CredentialsSignin {
   code = "rate_limited";
 }
@@ -94,6 +122,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = (user as any).id;
         token.role = (user as any).role;
         token.status = (user as any).status;
+        return token;
+      }
+
+      if (typeof token.id === "string") {
+        const status = await freshStatus(token.id);
+        if (status === null) return null; // pengguna dihapus: sesi tidak berlaku lagi
+        if (status !== undefined) token.status = status;
       }
       return token;
     },
