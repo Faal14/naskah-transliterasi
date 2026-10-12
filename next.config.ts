@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   // klien next-auth membaca NEXTAUTH_URL (lengkap dengan path /oase1/api/auth)
   env: authUrl ? { NEXTAUTH_URL: authUrl } : {},
   experimental: {
-    serverActions: { bodySizeLimit: "20mb" },
+    serverActions: { bodySizeLimit: "50mb" },
   },
 };
 
