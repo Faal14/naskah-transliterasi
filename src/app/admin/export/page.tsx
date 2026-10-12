@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExportPage() {
+  await requireAdmin();
+
   const manuscripts = await prisma.manuscript.findMany({
     orderBy: { title: "asc" },
     select: { id: true, title: true, script: true },

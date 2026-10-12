@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,6 +13,8 @@ export default async function ReviewManuscriptPage({
   params: Promise<{ manuscriptId: string }>;
   searchParams: Promise<{ p?: string }>;
 }) {
+  await requireAdmin();
+
   const { manuscriptId } = await params;
   const { p } = await searchParams;
   const pageNum = Math.max(1, parseInt(p || "1"));

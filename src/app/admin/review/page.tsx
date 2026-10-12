@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export const dynamic = "force-dynamic";
 
 export default async function ReviewListPage() {
+  await requireAdmin();
+
   const manuscripts = await prisma.manuscript.findMany({
     orderBy: { createdAt: "desc" },
     include: {

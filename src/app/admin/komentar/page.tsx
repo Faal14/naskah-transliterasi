@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import CommentRow from "./comment-row";
 
@@ -7,6 +8,8 @@ export default async function AdminKomentarPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
+  await requireAdmin();
+
   const { filter } = await searchParams;
   const activeFilter = filter || "PENDING";
 
