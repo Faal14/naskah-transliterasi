@@ -9,13 +9,6 @@ export default function SiteFooter() {
             <span className="font-bold text-white">LONTAR UIN Salatiga</span>{" "}
             — Pusat Studi Manuskrip &amp; Digital Heritage © 2026
           </p>
-          <p className="text-sky-300">
-            Dibimbing oleh Peneliti Utama:{" "}
-            <span className="text-white font-medium">
-              Almer Samantha Hidaya
-            </span>{" "}
-            (Ilmu Informasi)
-          </p>
         </div>
       </div>
     </footer>
