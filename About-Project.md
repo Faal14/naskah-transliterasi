@@ -82,7 +82,9 @@ cp .env.example .env
 # 4. Migrasi database (pengembangan lokal)
 npx prisma migrate dev
 
-# 5. Seed admin pertama
+# 5. Seed admin pertama (admin@naskah.id)
+# Isi ADMIN_INITIAL_PASSWORD di .env lebih dulu (minimal 12 karakter).
+# Jika admin sudah ada, seed tidak mengubah password-nya.
 npx prisma db seed
 
 # 6. Jalankan
