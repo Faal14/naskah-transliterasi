@@ -48,40 +48,6 @@ export async function createAnnotation(data: {
   return { success: true, annotation };
 }
 
-export async function updateAnnotation(
-  id: string,
-  data: {
-    transliteration: string;
-    translation: string;
-    notes: string;
-    pegonText?: string;
-  }
-) {
-  await checkAuth();
-
-  await prisma.annotation.update({
-    where: { id },
-    data: {
-      transliteration: data.transliteration,
-      translation: data.translation,
-      notes: data.notes || null,
-      pegonText: data.pegonText || null,
-    },
-  });
-
-  revalidatePath(`/kontributor/naskah`);
-  return { success: true };
-}
-
-export async function deleteAnnotation(id: string) {
-  await checkAuth();
-
-  await prisma.annotation.delete({ where: { id } });
-
-  revalidatePath(`/kontributor/naskah`);
-  return { success: true };
-}
-
 export async function submitPage(pageId: string) {
   const user = await checkAuth();
 
