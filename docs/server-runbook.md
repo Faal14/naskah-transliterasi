@@ -33,8 +33,12 @@ DEPLOY_PM2_NAME=oase1-lontar
 - [ ] Jawaban TIPD atas `docs/nginx-request.md` (sub-path atau subdomain, ada tidaknya
       Cloudflare, arsitektur server, izin koneksi keluar).
 - [ ] Akses SSH ke server dan hak tulis di `/var/www/mhs/oase1/`.
-- [ ] Project Supabase produksi: database, bucket privat `manuscripts`, kunci rahasia.
-      **Akun pemiliknya belum diputuskan.**
+- [ ] Project Supabase produksi: **project lama milik mahasiswa** (diputuskan 2026-10-13),
+      berisi data asli. Sebelum disentuh:
+  - [ ] cadangkan database dari dashboard Supabase;
+  - [ ] pastikan bucket `manuscripts` privat;
+  - [ ] pastikan kuncinya diterima aplikasi (bila masih format lama `service_role`, belum
+        pernah diuji dengan kode sekarang).
 - [ ] `AUTH_SECRET` baru khusus produksi (`openssl rand -base64 32`); jangan memakai nilai uji.
 
 ## 1. Periksa server — [BELUM TERBUKTI]
@@ -143,8 +147,14 @@ cd <repo>
   repo. Nilai di shell mengalahkan `.env` repo; pastikan baris `Datasource` di keluaran
   `migrate status` menunjuk host produksi sebelum menjalankan `migrate deploy`.
 - Jangan pernah `migrate dev` atau `migrate reset` ke produksi.
-- Seed hanya **membuat** `admin@naskah.id` bila belum ada. Bila database sudah berisi admin
-  lama, password-nya tidak berubah dan harus diganti terpisah.
+- Seed hanya **membuat** `admin@naskah.id` bila belum ada. Database mahasiswa sudah berisi
+  admin lama, jadi seed **tidak** mengubah password-nya.
+- **Wajib sebelum aplikasi dibuka ke publik:** ganti password `admin@naskah.id` dan hapus atau
+  ganti password `test@naskah.id`. Password lama keduanya (`admin123`, `test123`) pernah
+  tercantum di README dan halaman login. Caranya belum ditentukan (aplikasi belum punya
+  fitur ganti password) — **[BELUM TERBUKTI]**.
+- Database ini berisi data asli: jalankan `migrate status` dan baca hasilnya dulu; baru
+  `migrate deploy` setelah cadangan ada.
 - Password yang salah berulang kali bisa membuat Supabase memblokir IP sementara. Bila
   `P1000` muncul, berhenti dan periksa kredensial; jangan diulang-ulang.
 
