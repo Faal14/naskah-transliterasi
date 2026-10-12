@@ -1,5 +1,6 @@
 "use client";
 
+import { withBasePath } from "@/lib/base-path";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -38,7 +39,7 @@ export default function PlatformRatingSection({
     }
     setGuestId(id);
 
-    fetch("/api/platform-feedback?limit=5")
+    fetch(withBasePath("/api/platform-feedback?limit=5"))
       .then((r) => r.json())
       .then((data) => {
         setAverageScore(data.averageScore || 0);
@@ -55,7 +56,7 @@ export default function PlatformRatingSection({
   }, []);
 
   async function refreshStats() {
-    const data = await fetch("/api/platform-feedback?limit=5").then((r) =>
+    const data = await fetch(withBasePath("/api/platform-feedback?limit=5")).then((r) =>
       r.json()
     );
     setAverageScore(data.averageScore || 0);
@@ -70,7 +71,7 @@ export default function PlatformRatingSection({
     setFormRating(score);
     localStorage.setItem("lontar_platform_rating", score.toString());
 
-    const res = await fetch("/api/platform-feedback", {
+    const res = await fetch(withBasePath("/api/platform-feedback"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ score, guestId, action: "rate" }),
@@ -95,7 +96,7 @@ export default function PlatformRatingSection({
       return;
     }
 
-    const res = await fetch("/api/platform-feedback", {
+    const res = await fetch(withBasePath("/api/platform-feedback"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
