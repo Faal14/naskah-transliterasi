@@ -53,7 +53,8 @@ export async function submitComment(data: {
       message:
         "Komentar terkirim. Akan tampil setelah diverifikasi admin.",
     };
-  } catch (err: any) {
-    return { error: err.message || "Gagal mengirim komentar" };
+  } catch (err) {
+    console.error("submitComment:", err);
+    return { error: "Gagal mengirim komentar" };
   }
 }

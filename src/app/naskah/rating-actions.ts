@@ -34,8 +34,9 @@ export async function submitRating(manuscriptId: string, score: number) {
 
     revalidatePath(`/naskah/${manuscriptId}`);
     return { success: true };
-  } catch (err: any) {
-    return { error: err.message || "Gagal menyimpan rating" };
+  } catch (err) {
+    console.error("submitRating:", err);
+    return { error: "Gagal menyimpan rating" };
   }
 }
 
@@ -59,7 +60,8 @@ export async function deleteRating(manuscriptId: string) {
 
     revalidatePath(`/naskah/${manuscriptId}`);
     return { success: true };
-  } catch (err: any) {
-    return { error: err.message || "Gagal menghapus rating" };
+  } catch (err) {
+    console.error("deleteRating:", err);
+    return { error: "Gagal menghapus rating" };
   }
 }
