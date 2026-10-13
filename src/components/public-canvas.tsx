@@ -99,7 +99,10 @@ export default function PublicCanvas({
       </div>
 
       {/* Canvas */}
-      <div className="relative bg-sky-50 rounded-xl overflow-hidden border border-sky-100">
+      <div
+        className="relative bg-sky-50 rounded-xl overflow-hidden border border-sky-100"
+        onMouseLeave={() => setHoveredAnn(null)}
+      >
         <img
           src={imageUrl}
           alt="Naskah"
@@ -107,10 +110,30 @@ export default function PublicCanvas({
           draggable={false}
         />
 
-        {/* Hanya tampilkan kotak yang aktif (hover/selected) */}
+        {/* ============ HITBOX — area invisible untuk hover di gambar ============ */}
+        {annotations.map((a) => (
+          <div
+            key={`hit-${a.id}`}
+            className="absolute cursor-pointer z-10"
+            style={{
+              // Sedikit lebih besar dari kotak visual (padding 0.5%)
+              left: `${Math.max(0, a.x - 0.005) * 100}%`,
+              top: `${Math.max(0, a.y - 0.005) * 100}%`,
+              width: `${(a.w + 0.01) * 100}%`,
+              height: `${(a.h + 0.01) * 100}%`,
+            }}
+            onMouseEnter={() => setHoveredAnn(a)}
+            onMouseLeave={() => setHoveredAnn(null)}
+            onClick={() =>
+              setSelectedAnn(selectedAnn?.id === a.id ? null : a)
+            }
+          />
+        ))}
+
+        {/* ============ KOTAK HIGHLIGHT — visual, tidak bisa di-hover ============ */}
         {activeAnn && (
           <div
-            className="absolute border-4 border-amber-500 bg-amber-400/30 transition-all duration-150 shadow-lg pointer-events-none z-20"
+            className="absolute border-4 border-amber-500 bg-amber-400/30 transition-all duration-100 shadow-lg pointer-events-none z-20"
             style={{
               left: `${activeAnn.x * 100}%`,
               top: `${activeAnn.y * 100}%`,
@@ -155,7 +178,7 @@ export default function PublicCanvas({
         )}
       </div>
 
-      {/* 3 KOLOM: ALIH AKSARA | ALIH BAHASA | APARATUS KRITIS */}
+      {/* 3 KOLOM PARAGRAF */}
       {annotations.length === 0 && !fullTransliteration ? (
         <div className="bg-white border border-sky-100 rounded-xl p-8 text-center text-slate-500 text-sm">
           Belum ada transliterasi untuk halaman ini.
@@ -281,7 +304,9 @@ export default function PublicCanvas({
                     .map((a, i) => (
                       <li
                         key={a.id}
-                        className="flex gap-2 cursor-pointer hover:bg-sky-50 rounded px-1 -mx-1 py-0.5 transition"
+                        className={`flex gap-2 cursor-pointer hover:bg-sky-50 rounded px-1 -mx-1 py-0.5 transition ${
+                          hoveredAnn?.id === a.id ? "bg-amber-50" : ""
+                        }`}
                         onMouseEnter={() => setHoveredAnn(a)}
                         onMouseLeave={() => setHoveredAnn(null)}
                         onClick={() =>
@@ -312,8 +337,9 @@ export default function PublicCanvas({
       )}
 
       <p className="text-xs text-slate-500">
-        💡 Arahkan kursor ke kata berwarna di paragraf untuk melihat posisinya
-        di gambar naskah. Klik untuk detail lengkap.
+        💡 Arahkan kursor ke kata berwarna di paragraf <strong>atau</strong> ke
+        kata di gambar naskah untuk melihat posisinya. Klik untuk detail
+        lengkap.
       </p>
 
       {/* Detail panel */}
@@ -369,7 +395,11 @@ export default function PublicCanvas({
   );
 }
 
-// Komponen paragraf dengan highlight per kata
+/**
+ * Paragraf dengan highlight per kata.
+ * onMouseLeave dipindah ke <p> parent — supaya kursor yang lewat spasi antar
+ * kata TIDAK clear hover. Baru clear kalau keluar dari <p>.
+ */
 function HighlightedParagraph({
   text,
   annotations,
@@ -406,7 +436,10 @@ function HighlightedParagraph({
   const tokens = text.split(/(\s+)/);
 
   return (
-    <p className="text-sm leading-relaxed text-slate-800">
+    <p
+      className="text-sm leading-relaxed text-slate-800"
+      onMouseLeave={() => onHover(null)}
+    >
       {tokens.map((token, i) => {
         if (!token.trim()) {
           return <span key={i}>{token}</span>;
@@ -431,9 +464,9 @@ function HighlightedParagraph({
               key={i}
               className={`${
                 isActive ? activeColor : baseColor
-              } px-0.5 rounded cursor-pointer transition-all`}
+              } px-0.5 rounded cursor-pointer transition-colors duration-100`}
               onMouseEnter={() => onHover(ann)}
-              onMouseLeave={() => onHover(null)}
+              onPointerEnter={() => onHover(ann)}
               onClick={() => onSelect(ann)}
             >
               {token}
@@ -446,3 +479,4 @@ function HighlightedParagraph({
     </p>
   );
 }
+
