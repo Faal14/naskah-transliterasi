@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
-import { formatScript } from "@/lib/script-label";
+import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export const dynamic = "force-dynamic";
 
@@ -44,13 +44,13 @@ export default async function NaskahListPage() {
             <thead className="bg-sky-50 border-b border-sky-100">
               <tr>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">
+                  Kode
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-slate-600">
                   Judul
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">
                   Aksara
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-slate-600">
-                  Tahun
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-slate-600">
                   Halaman
@@ -66,22 +66,36 @@ export default async function NaskahListPage() {
                   key={m.id}
                   className="border-b border-sky-50 last:border-0"
                 >
-                  <td className="px-4 py-3 font-medium text-blue-900">
-                    {m.title}
+                  <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                    {m.code || (
+                      <span className="text-slate-300 italic">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-medium ${
-                        m.script === "PEGON"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-teal-100 text-teal-800"
-                      }`}
-                    >
-                      {formatScript(m.script)}
-                    </span>
+                    {m.title ? (
+                      <span className="font-medium text-blue-900">
+                        {m.title}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                        ⏳ Belum diisi kontributor
+                      </span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-slate-600">
-                    {m.year || "—"}
+                  <td className="px-4 py-3">
+                    {m.script ? (
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                          m.script
+                        )}`}
+                      >
+                        {formatScript(m.script)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 italic text-xs">
+                        —
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-slate-600">
                     {m._count.pages}

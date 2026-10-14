@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function KontributorLayout({
   children,
@@ -26,9 +27,11 @@ export default async function KontributorLayout({
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-teal-500 text-white font-bold text-sm">
-                L
-              </span>
+              <img
+                src={withBasePath("/logos/logo.png")}
+                alt="Logo LONTAR"
+                className="h-9 w-auto object-contain drop-shadow-md"
+              />
               <span className="font-bold text-white text-lg tracking-wide">
                 LONTAR
               </span>

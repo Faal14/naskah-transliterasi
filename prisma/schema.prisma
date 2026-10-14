@@ -63,8 +63,8 @@ model User {
 model Manuscript {
   id            String     @id @default(cuid())
   code          String?
-  title         String
-  script        String
+  title         String?
+  script        String?
   language      String?
   author        String?
   period        String?

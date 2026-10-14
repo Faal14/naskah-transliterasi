@@ -1,5 +1,5 @@
 // Ubah nama aksara jadi label cantik
-export function formatScript(script: string): string {
+export function formatScript(script: string | null | undefined): string {
   if (!script) return "—";
   // Known mappings
   const map: Record<string, string> = {
@@ -17,7 +17,7 @@ export function formatScript(script: string): string {
 }
 
 // Warna badge otomatis dari nama aksara
-export function getScriptColor(script: string): string {
+export function getScriptColor(script: string | null | undefined): string {
   if (!script) return "bg-slate-100 text-slate-700";
 
   const colors = [

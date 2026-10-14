@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/require-admin";
 import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatScript, getScriptColor } from "@/lib/script-label";
+import { formatScript } from "@/lib/script-label";
 
 export default async function ManuscriptDetailPage({
   params,
@@ -40,6 +40,8 @@ export default async function ManuscriptDetailPage({
     }
   }
 
+  const isMetadataComplete = !!manuscript.script && !!manuscript.title;
+
   return (
     <div>
       <div className="mb-6">
@@ -52,7 +54,11 @@ export default async function ManuscriptDetailPage({
         <div className="flex items-center gap-3 mt-2">
           <div className="w-1 h-6 bg-teal-500 rounded"></div>
           <h1 className="text-2xl font-bold text-blue-900">
-            {manuscript.title}
+            {manuscript.title || (
+              <span className="text-slate-400 italic">
+                Naskah {manuscript.code || "tanpa judul"}
+              </span>
+            )}
           </h1>
         </div>
         {manuscript.code && (
@@ -61,74 +67,82 @@ export default async function ManuscriptDetailPage({
           </p>
         )}
         <div className="flex gap-3 mt-3 text-sm text-slate-600 ml-4 flex-wrap items-center">
-          <span
-            className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
-              manuscript.script
-            )}`}
-          >
-            {formatScript(manuscript.script)}
-          </span>
+          {manuscript.script ? (
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+              {formatScript(manuscript.script)}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+              ⏳ Metadata belum diisi
+            </span>
+          )}
           {manuscript.year && <span>Tahun: {manuscript.year}</span>}
-          {manuscript.source && <span>Sumber: {manuscript.source}</span>}
           <span className="font-medium text-teal-700">
             {manuscript.pages.length} halaman
           </span>
         </div>
       </div>
 
-      {/* ============ METADATA DETAIL ============ */}
-      <div className="bg-white rounded-xl border border-sky-100 shadow-sm overflow-hidden mb-6">
-        <div className="bg-sky-50 px-5 py-3 border-b border-sky-100">
-          <h2 className="font-bold text-blue-900 text-sm">
-            📋 Metadata Naskah
-          </h2>
+      {!isMetadataComplete && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 mb-6 max-w-3xl">
+          <p className="font-medium mb-1">⏳ Metadata belum lengkap</p>
+          <p className="text-amber-800">
+            Kontributor akan mengisi judul, aksara, bahasa, pengarang, abstrak,
+            dan metadata lainnya saat mulai mengerjakan naskah ini.
+          </p>
         </div>
-        <div className="p-5 grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-          <Row label="Kode Naskah" value={manuscript.code} />
-          <Row label="Judul" value={manuscript.title} />
-          <Row label="Aksara" value={formatScript(manuscript.script)} />
-          <Row label="Bahasa" value={manuscript.language} />
-          <Row label="Pengarang / Penulis" value={manuscript.author} />
-          <Row label="Tahun / Periode" value={manuscript.period} />
-          <Row label="Tahun (Angka)" value={manuscript.year} />
-          <Row label="Sumber / Asal" value={manuscript.source} />
-          <Row label="Jenis Bahan" value={manuscript.mediaType} />
-          <Row label="Ukuran Kertas" value={manuscript.dimensions} />
-          <Row label="Illuminasi" value={manuscript.illumination} />
-          <Row label="Ilustrasi" value={manuscript.illustration} />
-          <Row label="Watermark" value={manuscript.watermark} />
-          <Row
-            label="Jumlah Halaman"
-            value={`${manuscript.pages.length} halaman`}
-          />
-          <Row
-            label="Rating"
-            value={`${manuscript._count.ratings} rating`}
-          />
-          <Row
-            label="Komentar"
-            value={`${manuscript._count.comments} komentar`}
-          />
-          {manuscript.abstract && (
-            <div className="md:col-span-2">
-              <p className="text-slate-500 text-xs mb-1">Abstrak (Isi Teks)</p>
-              <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
-                {manuscript.abstract}
-              </p>
-            </div>
-          )}
-          {manuscript.description && (
-            <div className="md:col-span-2">
-              <p className="text-slate-500 text-xs mb-1">Deskripsi</p>
-              <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
-                {manuscript.description}
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
-      {/* ============ HALAMAN ============ */}
+      {isMetadataComplete && (
+        <div className="bg-white rounded-xl border border-sky-100 shadow-sm overflow-hidden mb-6">
+          <div className="bg-sky-50 px-5 py-3 border-b border-sky-100">
+            <h2 className="font-bold text-blue-900 text-sm">
+              📋 Metadata Naskah (diisi kontributor)
+            </h2>
+          </div>
+          <div className="p-5 grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <Row label="Judul" value={manuscript.title} />
+            <Row label="Aksara" value={formatScript(manuscript.script || "")} />
+            <Row label="Bahasa" value={manuscript.language} />
+            <Row label="Pengarang / Penulis" value={manuscript.author} />
+            <Row label="Tahun / Periode" value={manuscript.period} />
+            <Row label="Tahun (Angka)" value={manuscript.year} />
+            <Row label="Sumber / Asal" value={manuscript.source} />
+            <Row label="Jenis Bahan" value={manuscript.mediaType} />
+            <Row label="Ukuran Kertas" value={manuscript.dimensions} />
+            <Row label="Illuminasi" value={manuscript.illumination} />
+            <Row label="Ilustrasi" value={manuscript.illustration} />
+            <Row label="Watermark" value={manuscript.watermark} />
+            <Row
+              label="Rating"
+              value={`${manuscript._count.ratings} rating`}
+            />
+            <Row
+              label="Komentar"
+              value={`${manuscript._count.comments} komentar`}
+            />
+            {manuscript.abstract && (
+              <div className="md:col-span-2">
+                <p className="text-slate-500 text-xs mb-1">
+                  Abstrak (Isi Teks)
+                </p>
+                <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
+                  {manuscript.abstract}
+                </p>
+              </div>
+            )}
+            {manuscript.description && (
+              <div className="md:col-span-2">
+                <p className="text-slate-500 text-xs mb-1">Deskripsi</p>
+                <p className="text-slate-800 whitespace-pre-wrap leading-relaxed">
+                  {manuscript.description}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center gap-3 mb-4">
         <div className="w-1 h-5 bg-teal-500 rounded"></div>
         <h2 className="text-lg font-bold text-blue-900">Halaman</h2>

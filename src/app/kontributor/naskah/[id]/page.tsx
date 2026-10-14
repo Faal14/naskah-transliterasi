@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import SubmitButton from "./submit-button";
 import WorkArea from "./work-area";
+import MetadataForm from "./metadata-form";
 import { formatScript, getScriptColor } from "@/lib/script-label";
 
 export default async function WorkPage({
@@ -81,6 +82,8 @@ export default async function WorkPage({
   const nextPage = pageNum < totalPages ? pageNum + 1 : null;
   const draftCount = annotations.filter((a) => a.status === "DRAFT").length;
 
+  const isMetadataComplete = !!manuscript.script && !!manuscript.title;
+
   return (
     <div>
       <div className="mb-4">
@@ -95,17 +98,19 @@ export default async function WorkPage({
             <div className="flex items-center gap-3">
               <div className="w-1 h-6 bg-teal-500 rounded"></div>
               <h1 className="text-xl font-bold text-blue-900">
-                {manuscript.title}
+                {manuscript.title || `Naskah ${manuscript.code || "tanpa judul"}`}
               </h1>
             </div>
             <div className="flex gap-3 mt-2 text-sm text-slate-600 ml-4 items-center flex-wrap">
-              <span
-                className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
-                  manuscript.script
-                )}`}
-              >
-                {formatScript(manuscript.script)}
-              </span>
+              {manuscript.script && (
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                    manuscript.script
+                  )}`}
+                >
+                  {formatScript(manuscript.script)}
+                </span>
+              )}
               <span>
                 Halaman {pageNum} dari {totalPages}
               </span>
@@ -148,6 +153,28 @@ export default async function WorkPage({
       </div>
 
       <div className="max-w-4xl mx-auto">
+        {!isMetadataComplete && (
+          <MetadataForm
+            manuscriptId={id}
+            initialData={{
+              title: manuscript.title || "",
+              script: manuscript.script || "",
+              language: manuscript.language || "",
+              author: manuscript.author || "",
+              period: manuscript.period || "",
+              mediaType: manuscript.mediaType || "",
+              dimensions: manuscript.dimensions || "",
+              abstract: manuscript.abstract || "",
+              illumination: manuscript.illumination || "",
+              illustration: manuscript.illustration || "",
+              watermark: manuscript.watermark || "",
+              year: manuscript.year || "",
+              source: manuscript.source || "",
+              description: manuscript.description || "",
+            }}
+          />
+        )}
+
         <WorkArea
           pageId={currentPage.id}
           imageUrl={imageUrl}

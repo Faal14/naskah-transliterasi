@@ -6,6 +6,7 @@ import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import PlatformRatingSection from "@/components/platform-rating-section";
 import { formatScript, getScriptColor } from "@/lib/script-label";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function HomePage() {
   const session = await auth();
@@ -79,13 +80,16 @@ export default async function HomePage() {
       <SiteHeader />
 
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-teal-700 text-white">
-        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/10 backdrop-blur border border-white/20 mb-4">
-            <span className="text-3xl">📜</span>
+        <div className="max-w-6xl mx-auto px-6 pt-10 pb-20 text-center">
+          
+          {/* --- LOGO LONTAR --- */}
+          <div className="flex justify-center mb-4">
+            <img
+              src={withBasePath("/logos/logo.png")}
+              alt="Logo LONTAR"
+              className="h-32 md:h-48 w-auto object-contain drop-shadow-2xl"
+            />
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 tracking-wide">
-            LONTAR
-          </h1>
 
           <div className="max-w-3xl mx-auto mb-6">
             <p className="text-sky-100 text-base md:text-lg leading-relaxed mb-3">
@@ -101,7 +105,7 @@ export default async function HomePage() {
             </p>
             <p className="text-sky-100 text-base md:text-lg leading-relaxed">
               Platform literasi digital untuk penelitian naskah kuno berbagai
-              aksara Nusantara — dikerjakan secara kolaboratif oleh
+              aksara Nusantara dikerjakan secara kolaboratif oleh
               kontributor terverifikasi.
             </p>
           </div>
@@ -155,7 +159,7 @@ export default async function HomePage() {
 
       {/* ============ STATISTIK ============ */}
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="#koleksi"
             className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
@@ -163,7 +167,7 @@ export default async function HomePage() {
             <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {totalManuscripts}
             </p>
-            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
+            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider break-words">
               Total Naskah
             </p>
           </Link>
@@ -174,7 +178,7 @@ export default async function HomePage() {
             <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {translatedManuscripts}
             </p>
-            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
+            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider break-words">
               Naskah Ditransliterasi
             </p>
           </Link>
@@ -185,7 +189,7 @@ export default async function HomePage() {
             <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
               {totalContributors}
             </p>
-            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">
+            <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider break-words">
               Kontributor
             </p>
             <p className="text-[10px] text-teal-600 font-medium mt-1.5 opacity-0 group-hover:opacity-100 transition">
@@ -227,7 +231,7 @@ export default async function HomePage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg leading-tight text-slate-900">
-                    {m.title}
+                    {m.title || "Tanpa judul"}
                   </h3>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(

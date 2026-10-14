@@ -80,7 +80,7 @@ export default async function ReviewListPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <h2 className="font-semibold text-lg text-blue-900">
-                    {m.title}
+                    {m.title || "Tanpa judul"}
                   </h2>
                   <div className="flex gap-3 mt-1 text-sm text-slate-600">
                     <span

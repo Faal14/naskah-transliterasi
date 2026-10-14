@@ -45,7 +45,7 @@ export default async function KontributorHome() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <h2 className="font-semibold text-lg text-blue-900 group-hover:text-teal-700 transition leading-tight">
-                    {m.title}
+                    {m.title || "Tanpa judul"}
                   </h2>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-medium whitespace-nowrap ml-2 ${
@@ -54,7 +54,7 @@ export default async function KontributorHome() {
                         : "bg-teal-100 text-teal-800"
                     }`}
                   >
-                    {m.script}
+                    {m.script || "-"}
                   </span>
                 </div>
 

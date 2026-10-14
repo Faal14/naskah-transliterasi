@@ -5,7 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "LONTAR — Literasi Online, Naskah Transliterasi, dan Alih-bahasa untuk Riset",
+  title:
+    "LONTAR — Literasi Online, Naskah Transliterasi, dan Alih-bahasa untuk Riset",
   description:
     "Platform open-source untuk transliterasi dan terjemahan naskah kuno beraksara Pegon dan Hanacaraka.",
 };

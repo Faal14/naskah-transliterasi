@@ -32,7 +32,6 @@ export default async function ExportPage() {
         analisis, atau lampiran laporan.
       </p>
 
-      {/* Statistik */}
       <div className="grid grid-cols-3 gap-3 mb-8 max-w-4xl">
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 shadow-sm">
           <p className="text-xs text-green-700">Approved</p>
@@ -54,7 +53,6 @@ export default async function ExportPage() {
         </div>
       </div>
 
-      {/* Form Export */}
       <div className="bg-white rounded-xl border border-sky-100 p-6 max-w-2xl shadow-sm">
         <h2 className="font-semibold text-lg mb-4 text-blue-900">
           Buat File Export
@@ -111,7 +109,7 @@ export default async function ExportPage() {
               <option value="ALL">Semua Naskah</option>
               {manuscripts.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.title} ({m.script})
+                  {m.title ?? "Tanpa judul"} ({m.script ?? "-"})
                 </option>
               ))}
             </select>

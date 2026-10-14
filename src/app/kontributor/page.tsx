@@ -10,8 +10,9 @@ export default async function KontributorHome() {
   const session = await auth();
   const user = session!.user as any;
 
-  // Auto-unlock stale
-  const cutoff = new Date(Date.now() - LOCK_TIMEOUT_HOURS * 60 * 60 * 1000);
+  // eslint-disable-next-line react-hooks/purity
+  const now = Date.now();
+  const cutoff = new Date(now - LOCK_TIMEOUT_HOURS * 60 * 60 * 1000);
   await prisma.manuscript.updateMany({
     where: {
       lockedById: { not: null },
@@ -75,7 +76,7 @@ export default async function KontributorHome() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <h2 className="font-bold text-lg text-slate-900 leading-tight">
-                    {m.title}
+                    {m.title || "Tanpa judul"}
                   </h2>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(
@@ -92,7 +93,6 @@ export default async function KontributorHome() {
                   <p>{totalPages} halaman</p>
                 </div>
 
-                {/* Status lock */}
                 {isLockedByMe && (
                   <div className="bg-teal-50 border border-teal-200 rounded-lg p-2 mb-3 text-xs text-teal-800 font-medium flex items-center gap-2">
                     <span>✅</span>
@@ -109,7 +109,6 @@ export default async function KontributorHome() {
                   </div>
                 )}
 
-                {/* Progress */}
                 <div className="mb-4">
                   <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
                     <span>Progress</span>
@@ -125,7 +124,6 @@ export default async function KontributorHome() {
                   </div>
                 </div>
 
-                {/* Aksi */}
                 {isFree && (
                   <LockButton
                     manuscriptId={m.id}

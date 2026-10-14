@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -7,12 +8,14 @@ import { revalidatePath } from "next/cache";
 async function checkAuth() {
   const session = await auth();
   if (!session) throw new Error("Unauthorized");
-  const user = session.user as any;
-  if (user.role !== "ADMIN" && user.role !== "CONTRIBUTOR") {
+  const user = session.user as
+    | { id?: string; role?: string; status?: string }
+    | undefined;
+  if (!user || (user.role !== "ADMIN" && user.role !== "CONTRIBUTOR")) {
     throw new Error("Unauthorized");
   }
   if (user.status !== "APPROVED") throw new Error("Not approved");
-  return user;
+  return user as { id: string; role: string; status: string };
 }
 
 export async function createAnnotation(data: {
@@ -59,9 +62,7 @@ export async function updateAnnotation(
 ) {
   const user = await checkAuth();
 
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
+  const existing = await prisma.annotation.findUnique({ where: { id } });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
@@ -91,9 +92,7 @@ export async function updateAnnotation(
 export async function deleteAnnotation(id: string) {
   const user = await checkAuth();
 
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
+  const existing = await prisma.annotation.findUnique({ where: { id } });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
@@ -147,5 +146,98 @@ export async function saveFullText(
 
   revalidatePath(`/kontributor/naskah`);
   revalidatePath(`/naskah`);
+  return { success: true };
+}
+
+// ============ Update Metadata Naskah ============
+
+const optionalStr = z.string().trim().max(5000).optional();
+
+const metadataSchema = z.object({
+  title: z.string().trim().max(500).optional(),
+  script: z.string().trim().max(100).optional(),
+  language: z.string().trim().max(100).optional(),
+  author: z.string().trim().max(200).optional(),
+  period: z.string().trim().max(200).optional(),
+  mediaType: z.string().trim().max(200).optional(),
+  dimensions: z.string().trim().max(200).optional(),
+  abstract: z.string().trim().max(5000).optional(),
+  illumination: z.string().trim().max(200).optional(),
+  illustration: z.string().trim().max(500).optional(),
+  watermark: z.string().trim().max(500).optional(),
+  year: z.string().trim().max(50).optional(),
+  source: z.string().trim().max(500).optional(),
+  description: z.string().trim().max(2000).optional(),
+});
+
+export async function updateManuscriptMetadata(
+  manuscriptId: string,
+  data: z.infer<typeof metadataSchema>
+) {
+  const user = await checkAuth();
+
+  const parsed = metadataSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "Data tidak valid");
+  }
+
+  const d = parsed.data;
+
+  if (!d.title || d.title.trim() === "") {
+    throw new Error("Judul naskah wajib diisi");
+  }
+  if (!d.script || d.script.trim() === "") {
+    throw new Error("Aksara wajib diisi");
+  }
+
+  // FIX: cek naskah & otorisasi
+  const manuscript = await prisma.manuscript.findUnique({
+    where: { id: manuscriptId },
+    select: { lockedById: true },
+  });
+  if (!manuscript) throw new Error("Naskah tidak ditemukan");
+
+  const isAdmin = user.role === "ADMIN";
+  const isOwner = manuscript.lockedById === user.id;
+  if (!isAdmin && !isOwner) {
+    throw new Error("Anda tidak berhak mengubah metadata naskah ini");
+  }
+
+  const updateData: Record<string, string | null> = {
+    title: d.title.trim(),
+    script: d.script.trim(),
+  };
+
+  const fields = [
+    "language",
+    "author",
+    "period",
+    "mediaType",
+    "dimensions",
+    "abstract",
+    "illumination",
+    "illustration",
+    "watermark",
+    "year",
+    "source",
+    "description",
+  ] as const;
+
+  for (const key of fields) {
+    if (d[key] !== undefined) {
+      const v = d[key]?.trim();
+      updateData[key] = v && v.length > 0 ? v : null;
+    }
+  }
+
+  await prisma.manuscript.update({
+    where: { id: manuscriptId },
+    data: updateData,
+  });
+
+  revalidatePath(`/kontributor/naskah/${manuscriptId}`);
+  revalidatePath(`/naskah/${manuscriptId}`);
+  revalidatePath("/naskah");
+  revalidatePath("/admin/naskah");
   return { success: true };
 }

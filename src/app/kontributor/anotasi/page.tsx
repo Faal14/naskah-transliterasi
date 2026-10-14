@@ -51,7 +51,10 @@ export default async function MyAnnotationsPage() {
       {annotations.length === 0 ? (
         <div className="bg-white rounded-xl border border-sky-100 p-12 text-center shadow-sm">
           <p className="text-slate-500 mb-4">Anda belum membuat anotasi.</p>
-          <Link href="/kontributor" className="text-teal-700 hover:underline font-medium">
+          <Link
+            href="/kontributor"
+            className="text-teal-700 hover:underline font-medium"
+          >
             Mulai bekerja di daftar naskah
           </Link>
         </div>
@@ -60,14 +63,17 @@ export default async function MyAnnotationsPage() {
           {annotations.map((a) => {
             const lastReview = a.reviews[0];
             return (
-              <div key={a.id} className="bg-white rounded-xl border border-sky-100 p-5 shadow-sm">
+              <div
+                key={a.id}
+                className="bg-white rounded-xl border border-sky-100 p-5 shadow-sm"
+              >
                 <div className="flex items-start justify-between mb-3 flex-wrap gap-2">
                   <div>
                     <Link
                       href={`/kontributor/naskah/${a.page.manuscript.id}?p=${a.page.pageNumber}`}
                       className="font-medium text-blue-900 hover:text-teal-700 transition"
                     >
-                      {a.page.manuscript.title}
+                      {a.page.manuscript.title || "Tanpa judul"}
                     </Link>
                     <div className="flex gap-3 mt-1 text-sm text-slate-600">
                       <span
@@ -77,7 +83,7 @@ export default async function MyAnnotationsPage() {
                             : "bg-teal-100 text-teal-800"
                         }`}
                       >
-                        {a.page.manuscript.script}
+                        {a.page.manuscript.script || "-"}
                       </span>
                       <span>Halaman {a.page.pageNumber}</span>
                     </div>
@@ -87,8 +93,12 @@ export default async function MyAnnotationsPage() {
 
                 <div className="grid md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-slate-500 mb-0.5">Transliterasi</p>
-                    <p className="font-medium text-blue-900">{a.transliteration}</p>
+                    <p className="text-xs text-slate-500 mb-0.5">
+                      Transliterasi
+                    </p>
+                    <p className="font-medium text-blue-900">
+                      {a.transliteration}
+                    </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 mb-0.5">Terjemahan</p>
@@ -106,20 +116,28 @@ export default async function MyAnnotationsPage() {
                 {lastReview && (
                   <div
                     className={`mt-3 pt-3 border-t rounded p-3 text-sm ${
-                      lastReview.decision === "APPROVED" ? "bg-green-50 border-green-100" : "bg-red-50 border-red-100"
+                      lastReview.decision === "APPROVED"
+                        ? "bg-green-50 border-green-100"
+                        : "bg-red-50 border-red-100"
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span
                         className={`font-medium text-xs ${
-                          lastReview.decision === "APPROVED" ? "text-green-700" : "text-red-700"
+                          lastReview.decision === "APPROVED"
+                            ? "text-green-700"
+                            : "text-red-700"
                         }`}
                       >
-                        {lastReview.decision === "APPROVED" ? "✓ Disetujui" : "✕ Ditolak"} oleh{" "}
-                        {lastReview.reviewer.name}
+                        {lastReview.decision === "APPROVED"
+                          ? "✓ Disetujui"
+                          : "✕ Ditolak"}{" "}
+                        oleh {lastReview.reviewer.name}
                       </span>
                     </div>
-                    {lastReview.comment && <p className="text-slate-700">{lastReview.comment}</p>}
+                    {lastReview.comment && (
+                      <p className="text-slate-700">{lastReview.comment}</p>
+                    )}
                   </div>
                 )}
               </div>

@@ -13,7 +13,7 @@ type Comment = {
   status: string;
   createdAt: string;
   manuscriptId: string;
-  manuscriptTitle: string;
+  manuscriptTitle: string | null;
 };
 
 export default function CommentRow({ comment }: { comment: Comment }) {
@@ -42,8 +42,9 @@ export default function CommentRow({ comment }: { comment: Comment }) {
       }
       router.refresh();
       setTimeout(() => setMsg(""), 2000);
-    } catch (err: any) {
-      setMsg("Gagal: " + (err.message || "error"));
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "error";
+      setMsg("Gagal: " + errorMsg);
     } finally {
       setLoading(false);
     }
@@ -95,7 +96,7 @@ export default function CommentRow({ comment }: { comment: Comment }) {
           <p className="text-xs text-slate-500 mb-2">
             📖 Naskah:{" "}
             <span className="font-medium text-blue-900">
-              {comment.manuscriptTitle}
+              {comment.manuscriptTitle || "Tanpa judul"}
             </span>
           </p>
           <p className="text-sm text-slate-700 whitespace-pre-wrap break-words bg-sky-50 rounded-lg p-3 leading-relaxed">

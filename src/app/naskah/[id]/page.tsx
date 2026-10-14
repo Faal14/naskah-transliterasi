@@ -58,7 +58,6 @@ export default async function PublicManuscriptPage({
     ? ratings.find((r) => r.userId === user.id)?.score || null
     : null;
 
-  // Komentar APPROVED untuk naskah ini
   const comments = await prisma.comment.findMany({
     where: { manuscriptId: id, status: "APPROVED" },
     orderBy: { createdAt: "desc" },
@@ -123,7 +122,7 @@ export default async function PublicManuscriptPage({
 
           <div className="mt-2">
             <h1 className="text-2xl font-bold text-blue-900">
-              {manuscript.title}
+              {manuscript.title || "Tanpa judul"}
             </h1>
 
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-slate-600 items-center">
