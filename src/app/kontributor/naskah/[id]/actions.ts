@@ -1,5 +1,6 @@
 "use server";
 
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -7,12 +8,14 @@ import { revalidatePath } from "next/cache";
 async function checkAuth() {
   const session = await auth();
   if (!session) throw new Error("Unauthorized");
-  const user = session.user as any;
-  if (user.role !== "ADMIN" && user.role !== "CONTRIBUTOR") {
+  const user = session.user as
+    | { id?: string; role?: string; status?: string }
+    | undefined;
+  if (!user || (user.role !== "ADMIN" && user.role !== "CONTRIBUTOR")) {
     throw new Error("Unauthorized");
   }
   if (user.status !== "APPROVED") throw new Error("Not approved");
-  return user;
+  return user as { id: string; role: string; status: string };
 }
 
 export async function createAnnotation(data: {
@@ -150,53 +153,61 @@ export async function saveFullText(
   return { success: true };
 }
 
-// ============ Update Metadata Naskah (termasuk Judul) ============
+// ============ Update Metadata Naskah ============
+
+const metadataSchema = z.object({
+  title: z.string().trim().max(500).nullable().optional(),
+  script: z.string().trim().max(100).nullable().optional(),
+  language: z.string().trim().max(100).nullable().optional(),
+  author: z.string().trim().max(200).nullable().optional(),
+  period: z.string().trim().max(200).nullable().optional(),
+  mediaType: z.string().trim().max(200).nullable().optional(),
+  dimensions: z.string().trim().max(200).nullable().optional(),
+  abstract: z.string().trim().max(5000).nullable().optional(),
+  illumination: z.string().trim().max(200).nullable().optional(),
+  illustration: z.string().trim().max(500).nullable().optional(),
+  watermark: z.string().trim().max(500).nullable().optional(),
+  year: z.string().trim().max(50).nullable().optional(),
+  source: z.string().trim().max(500).nullable().optional(),
+  description: z.string().trim().max(2000).nullable().optional(),
+});
+
+function trimmedOrNull(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const t = v.trim();
+  return t.length > 0 ? t : null;
+}
+
 export async function updateManuscriptMetadata(
   manuscriptId: string,
-  data: {
-    title: string;
-    script: string;
-    language: string;
-    author: string;
-    period: string;
-    mediaType: string;
-    dimensions: string;
-    abstract: string;
-    illumination: string;
-    illustration: string;
-    watermark: string;
-    year: string;
-    source: string;
-    description: string;
-  }
+  data: z.infer<typeof metadataSchema>
 ) {
   await checkAuth();
 
-  if (!data.title || data.title.trim() === "") {
-    throw new Error("Judul naskah wajib diisi");
+  const parsed = metadataSchema.safeParse(data);
+  if (!parsed.success) {
+    throw new Error(parsed.error.issues[0]?.message || "Data tidak valid");
   }
 
-  if (!data.script || data.script.trim() === "") {
-    throw new Error("Aksara wajib diisi");
-  }
+  const d = parsed.data;
 
   await prisma.manuscript.update({
     where: { id: manuscriptId },
     data: {
-      title: data.title.trim(),
-      script: data.script.trim(),
-      language: data.language.trim() || null,
-      author: data.author.trim() || null,
-      period: data.period.trim() || null,
-      mediaType: data.mediaType.trim() || null,
-      dimensions: data.dimensions.trim() || null,
-      abstract: data.abstract.trim() || null,
-      illumination: data.illumination.trim() || null,
-      illustration: data.illustration.trim() || null,
-      watermark: data.watermark.trim() || null,
-      year: data.year.trim() || null,
-      source: data.source.trim() || null,
-      description: data.description.trim() || null,
+      title: trimmedOrNull(d.title),
+      script: trimmedOrNull(d.script),
+      language: trimmedOrNull(d.language),
+      author: trimmedOrNull(d.author),
+      period: trimmedOrNull(d.period),
+      mediaType: trimmedOrNull(d.mediaType),
+      dimensions: trimmedOrNull(d.dimensions),
+      abstract: trimmedOrNull(d.abstract),
+      illumination: trimmedOrNull(d.illumination),
+      illustration: trimmedOrNull(d.illustration),
+      watermark: trimmedOrNull(d.watermark),
+      year: trimmedOrNull(d.year),
+      source: trimmedOrNull(d.source),
+      description: trimmedOrNull(d.description),
     },
   });
 

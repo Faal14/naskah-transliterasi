@@ -140,8 +140,7 @@ export default function NewManuscriptPage() {
       }
 
       // 5. Redirect (pakai base-path)
-      router.push(withBasePath(`/admin/naskah/${manuscriptId}`));
-    } catch (err) {
+router.push(`/admin/naskah/${manuscriptId}`);    } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(message);
       setLoading(false);

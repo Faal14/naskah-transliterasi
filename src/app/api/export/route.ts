@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (!session || (session.user as any).role !== "ADMIN") {
+  const user = session?.user as { role?: string } | undefined;
+  if (!user || user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -13,8 +15,10 @@ export async function GET(req: NextRequest) {
   const manuscriptId = searchParams.get("manuscriptId") || "ALL";
   const statusFilter = searchParams.get("status") || "APPROVED";
 
-  const where: any = {};
-  if (statusFilter !== "ALL") where.status = statusFilter;
+  const where: Prisma.AnnotationWhereInput = {};
+  if (statusFilter !== "ALL") {
+    where.status = statusFilter as Prisma.EnumAnnotationStatusFilter;
+  }
   if (manuscriptId !== "ALL") {
     where.page = { manuscriptId };
   }
@@ -76,10 +80,10 @@ export async function GET(req: NextRequest) {
     const rows = annotations.map((a) => {
       const review = a.reviews[0];
       return [
-        a.page.manuscript.title,
-        a.page.manuscript.script,
-        a.page.manuscript.year || "",
-        a.page.manuscript.source || "",
+        a.page.manuscript.title ?? "",
+        a.page.manuscript.script ?? "",
+        a.page.manuscript.year ?? "",
+        a.page.manuscript.source ?? "",
         String(a.page.pageNumber),
         String(a.x),
         String(a.y),
@@ -87,12 +91,12 @@ export async function GET(req: NextRequest) {
         String(a.h),
         a.transliteration,
         a.translation,
-        a.pegonText || "",
-        a.notes || "",
+        a.pegonText ?? "",
+        a.notes ?? "",
         a.status,
         a.contributor.name,
-        review?.reviewer.name || "",
-        review?.comment || "",
+        review?.reviewer.name ?? "",
+        review?.comment ?? "",
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(",");

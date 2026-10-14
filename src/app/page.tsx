@@ -6,6 +6,7 @@ import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import PlatformRatingSection from "@/components/platform-rating-section";
 import { formatScript, getScriptColor } from "@/lib/script-label";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function HomePage() {
   const session = await auth();
@@ -79,13 +80,12 @@ export default async function HomePage() {
       <SiteHeader />
 
       <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-teal-700 text-white">
-        {/* --- UBAH DI SINI: py-20 → pt-10 pb-20 --- */}
         <div className="max-w-6xl mx-auto px-6 pt-10 pb-20 text-center">
           
           {/* --- LOGO LONTAR --- */}
           <div className="flex justify-center mb-4">
             <img
-              src="/logos/logo.png"
+              src={withBasePath("/logos/logo.png")}
               alt="Logo LONTAR"
               className="h-32 md:h-48 w-auto object-contain drop-shadow-2xl"
             />
@@ -157,7 +157,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ============ STATISTIK (RESPONSIF) ============ */}
+      {/* ============ STATISTIK ============ */}
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
@@ -231,14 +231,14 @@ export default async function HomePage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="font-bold text-lg leading-tight text-slate-900">
-                    {m.title}
+                    {m.title || "Tanpa judul"}
                   </h3>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(
-                      m.script as any
+                      m.script
                     )}`}
                   >
-                    {formatScript(m.script!)}
+                    {formatScript(m.script)}
                   </span>
                 </div>
 

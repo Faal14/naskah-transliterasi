@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function SiteHeader() {
   const session = await auth();
@@ -16,7 +17,7 @@ export default async function SiteHeader() {
           
           {/* Logo Utama LONTAR */}
           <img 
-            src="/logos/logo.png" 
+            src={withBasePath("/logos/logo.png")} 
             alt="Logo LONTAR" 
             className="h-10 w-auto object-contain drop-shadow-md shrink-0" 
           />
@@ -39,19 +40,19 @@ export default async function SiteHeader() {
           <div className="hidden md:flex items-center gap-5 border-r border-white/20 pr-6">
             
             <img 
-              src="/logos/kemenag.png" 
+              src={withBasePath("/logos/kemenag.png")} 
               alt="Kemenag" 
               className="h-10 w-auto object-contain drop-shadow-md" 
             />
             
             <img 
-              src="/logos/uin.png" 
+              src={withBasePath("/logos/uin.png")} 
               alt="UIN" 
               className="h-10 w-auto object-contain drop-shadow-md" 
             />
             
             <img 
-              src="/logos/oase.png" 
+              src={withBasePath("/logos/oase.png")} 
               alt="OASE" 
               className="h-10 w-auto object-contain drop-shadow-md" 
             />

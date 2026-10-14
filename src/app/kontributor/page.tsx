@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import Link from "next/link";
 import { formatScript, getScriptColor } from "@/lib/script-label";
 import LockButton from "./lock-button";
+import { withBasePath } from "@/lib/base-path";
 
 const LOCK_TIMEOUT_HOURS = 24;
 
@@ -85,6 +86,7 @@ export default async function KontributorHome() {
                     {formatScript(m.script!)}
                   </span>
                 </div>
+
 
                 <div className="text-sm text-slate-700 space-y-1 mb-4">
                   {m.year && <p>Tahun: {m.year}</p>}

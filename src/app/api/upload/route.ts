@@ -1,25 +1,27 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
+import { requireAdminApi } from "@/lib/require-admin";
 
 const ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "webp"] as const;
 
 const uploadSchema = z.object({
-  manuscriptId: z.string().min(1, "manuscriptId wajib").max(100),
-  filename: z.string().min(1, "filename wajib").max(255),
+  manuscriptId: z.string().min(1).max(100),
+  filename: z.string().min(1).max(255),
   contentType: z.enum(ALLOWED_CONTENT_TYPES, {
     message: "Hanya JPEG, PNG, atau WebP",
   }),
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const user = session?.user as { role?: string } | undefined;
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authCheck = await requireAdminApi();
+  if (!authCheck.ok) {
+    return NextResponse.json(
+      { error: authCheck.error },
+      { status: authCheck.status }
+    );
   }
 
   try {
@@ -34,7 +36,6 @@ export async function POST(req: Request) {
 
     const { manuscriptId, filename, contentType } = parsed.data;
 
-    // Validasi ekstensi dari filename
     const ext = (filename.split(".").pop() || "").toLowerCase();
     if (!(ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
       return NextResponse.json(
@@ -43,7 +44,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Cek manuscript ada
     const manuscript = await prisma.manuscript.findUnique({
       where: { id: manuscriptId },
       select: { id: true },
@@ -64,8 +64,11 @@ export async function POST(req: Request) {
       .from("manuscripts")
       .createSignedUploadUrl(path);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error || !data) {
+      return NextResponse.json(
+        { error: "Gagal menyiapkan upload" },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({

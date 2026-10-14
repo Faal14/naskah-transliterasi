@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { requireAdminApi } from "@/lib/require-admin";
 
 const initSchema = z.object({
   code: z.string().trim().max(100).optional().nullable(),
@@ -9,10 +9,12 @@ const initSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  const session = await auth();
-  const user = session?.user as { role?: string } | undefined;
-  if (!user || user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const authCheck = await requireAdminApi();
+  if (!authCheck.ok) {
+    return NextResponse.json(
+      { error: authCheck.error },
+      { status: authCheck.status }
+    );
   }
 
   try {
@@ -30,8 +32,8 @@ export async function POST(req: Request) {
     const manuscript = await prisma.manuscript.create({
       data: {
         code: code || null,
-        title: title || "",
-        script: "",
+        title: title || null,
+        script: null,
       },
     });
 

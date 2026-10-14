@@ -1,12 +1,18 @@
-import { requireAdmin } from "@/lib/require-admin";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import Link from "next/link";
+import { withBasePath } from "@/lib/base-path";
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireAdmin();
+  const session = await auth();
+  if (!session) redirect("/login");
+
+  const user = session.user as any;
+  if (user.role !== "ADMIN") redirect("/dashboard");
 
   return (
     <div className="min-h-screen bg-sky-50">
@@ -14,9 +20,8 @@ export default async function AdminLayout({
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
-              {/* Logo LONTAR (menggantikan lingkaran "L") */}
               <img
-                src="/logos/logo.png"
+                src={withBasePath("/logos/logo.png")}
                 alt="Logo LONTAR"
                 className="h-9 w-auto object-contain drop-shadow-md"
               />
