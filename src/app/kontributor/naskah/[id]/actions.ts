@@ -174,7 +174,7 @@ export async function updateManuscriptMetadata(
   manuscriptId: string,
   data: z.infer<typeof metadataSchema>
 ) {
-  await checkAuth();
+  const user = await checkAuth();
 
   const parsed = metadataSchema.safeParse(data);
   if (!parsed.success) {
@@ -183,7 +183,6 @@ export async function updateManuscriptMetadata(
 
   const d = parsed.data;
 
-  // Judul & aksara wajib diisi saat edit
   if (!d.title || d.title.trim() === "") {
     throw new Error("Judul naskah wajib diisi");
   }
@@ -191,7 +190,19 @@ export async function updateManuscriptMetadata(
     throw new Error("Aksara wajib diisi");
   }
 
-  // Hanya tulis field yang dikirim (bukan undefined)
+  // FIX: cek naskah & otorisasi
+  const manuscript = await prisma.manuscript.findUnique({
+    where: { id: manuscriptId },
+    select: { lockedById: true },
+  });
+  if (!manuscript) throw new Error("Naskah tidak ditemukan");
+
+  const isAdmin = user.role === "ADMIN";
+  const isOwner = manuscript.lockedById === user.id;
+  if (!isAdmin && !isOwner) {
+    throw new Error("Anda tidak berhak mengubah metadata naskah ini");
+  }
+
   const updateData: Record<string, string | null> = {
     title: d.title.trim(),
     script: d.script.trim(),
