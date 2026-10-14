@@ -29,7 +29,7 @@ apa adanya dan belum diperiksa dari sisi kami. Tanda di tiap langkah:
 ## Tata letak di server
 
 ```
-/var/www/mhs/oase1/
+<DIR-APLIKASI>/
 ├── runtime/        Node 22, PM2, data PM2, env.sh (folder chmod 700, env.sh chmod 600)
 ├── app/            hasil build (.next/standalone), diisi scripts/deploy.sh
 └── app-prev/       cadangan versi sebelumnya, dibuat scripts/deploy.sh
@@ -38,15 +38,15 @@ apa adanya dan belum diperiksa dari sisi kami. Tanda di tiap langkah:
 Nilai untuk `scripts/deploy.sh`:
 
 ```
-DEPLOY_PATH=/var/www/mhs/oase1/app
-DEPLOY_RUNTIME_ENV=/var/www/mhs/oase1/runtime/env.sh
+DEPLOY_DIR=<DIR-APLIKASI>      # DEPLOY_PATH=<DIR-APLIKASI>/app dan
+                               # DEPLOY_RUNTIME_ENV=<DIR-APLIKASI>/runtime/env.sh diturunkan otomatis
 DEPLOY_PM2_NAME=oase1-lontar
 ```
 
 ## 0. Prasyarat
 
 - [x] Jawaban TIPD atas `docs/nginx-request.md` (tabel di atas).
-- [ ] Akses SSH ke server dan hak tulis di `/var/www/mhs/oase1/`.
+- [ ] Akses SSH ke server dan hak tulis di `<DIR-APLIKASI>/`.
 - [x] Project Supabase produksi: **project baru yang kosong** (akun milik mahasiswa). Data
       project lama tidak dibawa; seluruh akun lama adalah akun uji. Diperiksa dari laptop pada
       13 Oktober 2026 — **[TERBUKTI DI LAPTOP]**:
@@ -66,7 +66,7 @@ DEPLOY_PM2_NAME=oase1-lontar
 uname -m                      # harap x86_64 (jawaban TIPD; lihat catatan engine Prisma di bawah)
 lsb_release -ds               # harap Ubuntu 24.04
 openssl version               # harap OpenSSL 3.0.x
-ls -ld /var/www/mhs/oase1     # harus milik pengguna Anda
+ls -ld <DIR-APLIKASI>     # harus milik pengguna Anda
 ss -ltn | grep ':3001'        # harus kosong: port belum dipakai
 curl -sI https://<ref>.supabase.co | head -1   # koneksi keluar ke Supabase: harus ada baris HTTP
 command -v rsync   || echo "rsync TIDAK ADA"     # dipakai scripts/deploy.sh di sisi server
@@ -87,10 +87,10 @@ harus ditambah dulu (perubahan skema, perlu keputusan).
 Tanpa hak root; semuanya di dalam folder sendiri.
 
 ```bash
-mkdir -p /var/www/mhs/oase1/runtime /var/www/mhs/oase1/app
-chmod 700 /var/www/mhs/oase1/runtime   # hanya pemilik: folder ini akan memuat env.sh
-ls -ld /var/www/mhs/oase1/runtime      # harap drwx------
-cd /var/www/mhs/oase1/runtime
+mkdir -p <DIR-APLIKASI>/runtime <DIR-APLIKASI>/app
+chmod 700 <DIR-APLIKASI>/runtime   # hanya pemilik: folder ini akan memuat env.sh
+ls -ld <DIR-APLIKASI>/runtime      # harap drwx------
+cd <DIR-APLIKASI>/runtime
 
 # Ganti <versi> dengan rilis 22.x terbaru di https://nodejs.org/dist/latest-v22.x/
 # (pada 13 Oktober 2026: 22.23.3, sama dengan yang dipakai untuk build di laptop)
@@ -100,7 +100,7 @@ grep "node-v<versi>-linux-x64.tar.xz" SHASUMS256.txt | sha256sum -c -   # harus 
 tar -xJf node-v<versi>-linux-x64.tar.xz
 mv node-v<versi>-linux-x64 node
 
-export PATH=/var/www/mhs/oase1/runtime/node/bin:$PATH
+export PATH=<DIR-APLIKASI>/runtime/node/bin:$PATH
 node -v            # harap v22.x
 npm install -g pm2 # terpasang di runtime/node, bukan di sistem
 pm2 -v
@@ -122,17 +122,17 @@ grep "node-v<versi>-linux-x64.tar.xz" SHASUMS256.txt | sha256sum -c -   # harus 
 npm install --prefix ./pm2-bundle --registry=https://registry.npmjs.org/ pm2
 tar -czf pm2-bundle.tgz pm2-bundle
 
-scp node-v<versi>-linux-x64.tar.xz pm2-bundle.tgz <pengguna>@<host>:/var/www/mhs/oase1/runtime/
+scp node-v<versi>-linux-x64.tar.xz pm2-bundle.tgz <USER-SERVER>@<IP-SERVER>:<DIR-APLIKASI>/runtime/
 ```
 
 Di server:
 
 ```bash
-cd /var/www/mhs/oase1/runtime
+cd <DIR-APLIKASI>/runtime
 tar -xJf node-v<versi>-linux-x64.tar.xz && mv node-v<versi>-linux-x64 node
 tar -xzf pm2-bundle.tgz
 ln -s ../../pm2-bundle/node_modules/pm2/bin/pm2 node/bin/pm2   # supaya `pm2` ada di PATH
-export PATH=/var/www/mhs/oase1/runtime/node/bin:$PATH
+export PATH=<DIR-APLIKASI>/runtime/node/bin:$PATH
 node -v && pm2 -v
 ```
 
@@ -144,7 +144,7 @@ node -v && pm2 -v
 ## 3. Buat `env.sh` — [BELUM TERBUKTI]
 
 ```bash
-cd /var/www/mhs/oase1/runtime
+cd <DIR-APLIKASI>/runtime
 ls -ld .                           # harap drwx------ (chmod 700 dari langkah 2)
 touch env.sh && chmod 600 env.sh   # izin dipasang SEBELUM rahasia ditulis
 nano env.sh
@@ -154,8 +154,8 @@ Isi (nilai diisi sendiri; jangan pernah di-commit atau ditempel ke obrolan):
 
 ```bash
 # PATH dan lokasi data PM2
-export PATH=/var/www/mhs/oase1/runtime/node/bin:$PATH
-export PM2_HOME=/var/www/mhs/oase1/runtime/pm2
+export PATH=<DIR-APLIKASI>/runtime/node/bin:$PATH
+export PM2_HOME=<DIR-APLIKASI>/runtime/pm2
 
 # Server Next.js
 export NODE_ENV=production
@@ -264,9 +264,8 @@ perintah tercetak dan tidak ada sambungan jaringan yang dibuka — **[TERBUKTI D
 Mode `--go` belum pernah dijalankan.
 
 ```bash
-export DEPLOY_HOST=<host> DEPLOY_USER=<pengguna>
-export DEPLOY_PATH=/var/www/mhs/oase1/app
-export DEPLOY_RUNTIME_ENV=/var/www/mhs/oase1/runtime/env.sh
+export DEPLOY_HOST=<IP-SERVER> DEPLOY_USER=<USER-SERVER>
+export DEPLOY_DIR=<DIR-APLIKASI>
 export DEPLOY_PM2_NAME=oase1-lontar
 
 scripts/deploy.sh        # dry-run: baca perintah yang tercetak
@@ -282,8 +281,8 @@ diatur lewat `~/.ssh/config` di laptop.
 Di server:
 
 ```bash
-source /var/www/mhs/oase1/runtime/env.sh
-cd /var/www/mhs/oase1/app
+source <DIR-APLIKASI>/runtime/env.sh
+cd <DIR-APLIKASI>/app
 ls BUILD_INFO.txt server.js           # keduanya harus ada
 ls -a | grep '^\.env' || echo "tidak ada .env (benar)"
 
@@ -306,7 +305,7 @@ TIPD mengizinkan `cron @reboot`. Pasang tanpa membuka editor (baris lama di cron
 
 ```bash
 ( crontab -l 2>/dev/null | grep -v 'pm2 resurrect'
-  echo "@reboot /bin/bash -c 'source /var/www/mhs/oase1/runtime/env.sh && pm2 resurrect' >> /var/www/mhs/oase1/runtime/cron.log 2>&1"
+  echo "@reboot /bin/bash -c 'source <DIR-APLIKASI>/runtime/env.sh && pm2 resurrect' >> <DIR-APLIKASI>/runtime/cron.log 2>&1"
 ) | crontab -
 crontab -l    # baris @reboot harus tampil tepat satu kali
 ```
@@ -329,7 +328,7 @@ Cloudflare/Nginx):
 
 ```bash
 ( crontab -l 2>/dev/null | grep -v 'platform-feedback'
-  echo "17 5,17 * * * curl -fsS -m 30 -o /dev/null 'http://127.0.0.1:3001/oase1/api/platform-feedback?limit=1' || echo \"\$(date -Is) keep-alive gagal\" >> /var/www/mhs/oase1/runtime/cron.log"
+  echo "17 5,17 * * * curl -fsS -m 30 -o /dev/null 'http://127.0.0.1:3001/oase1/api/platform-feedback?limit=1' || echo \"\$(date -Is) keep-alive gagal\" >> <DIR-APLIKASI>/runtime/cron.log"
 ) | crontab -
 crontab -l
 ```
@@ -382,8 +381,8 @@ Hanya satu cadangan disimpan; deploy berikutnya menimpanya.
 Di server:
 
 ```bash
-source /var/www/mhs/oase1/runtime/env.sh
-cd /var/www/mhs/oase1
+source <DIR-APLIKASI>/runtime/env.sh
+cd <DIR-APLIKASI>
 cat app-prev/BUILD_INFO.txt          # pastikan ini versi yang dituju
 
 mv app app-gagal                     # simpan versi rusak untuk diperiksa

@@ -73,7 +73,7 @@ Dua hal yang mudah terlewat:
    mengunci; bila terlalu besar, pengunjung bisa memalsukan IP-nya.
 2. Bila ada proxy di depan Nginx yang mengakhiri HTTPS, apakah Nginx menerima permintaan
    sebagai HTTP? (Memengaruhi nilai `X-Forwarded-Proto`.)
-3. Apakah folder aplikasi di server (`/var/www/mhs/oase1/`) juga disajikan Nginx sebagai
+3. Apakah folder aplikasi di server (`<DIR-APLIKASI>/`) juga disajikan Nginx sebagai
    berkas statis? Bila ya, mohon pastikan seluruh `/oase1/...` hanya diteruskan ke aplikasi
    (seperti blok di atas), supaya berkas di `runtime/` dan `app/` tidak bisa diunduh.
 4. Apakah sub-path `/oase1` yang dipakai, atau kami akan diberi subdomain? Aplikasi mendukung

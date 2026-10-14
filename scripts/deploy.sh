@@ -4,16 +4,18 @@
 # Bawaan: DRY-RUN. Hanya mencetak perintah dan TIDAK menghubungi server.
 # Eksekusi sungguhan hanya dengan argumen --go.
 #
-# Wajib env (tidak ada nilai bawaan):
+# Env (tidak ada nilai server yang tertanam di skrip ini):
 #   DEPLOY_HOST         host server (atau alias di ~/.ssh/config)
 #   DEPLOY_USER         pengguna SSH
-#   DEPLOY_PATH         folder aplikasi di server, harus berakhiran /app
-#   DEPLOY_RUNTIME_ENV  jalur env.sh di server (PATH node/pm2 + variabel aplikasi)
+#   DEPLOY_DIR          folder dasar di server; menjadi bawaan dua variabel berikut
+#   DEPLOY_PATH         folder aplikasi, harus berakhiran /app (bawaan: $DEPLOY_DIR/app)
+#   DEPLOY_RUNTIME_ENV  jalur env.sh (PATH node/pm2 + variabel aplikasi)
+#                       (bawaan: $DEPLOY_DIR/runtime/env.sh)
 #   DEPLOY_PM2_NAME     nama proses PM2
 #
 # Contoh:
-#   DEPLOY_HOST=... DEPLOY_USER=... DEPLOY_PATH=/var/www/mhs/oase1/app \
-#   DEPLOY_RUNTIME_ENV=/var/www/mhs/oase1/runtime/env.sh DEPLOY_PM2_NAME=oase1-lontar \
+#   DEPLOY_HOST=<IP-SERVER> DEPLOY_USER=<USER-SERVER> DEPLOY_DIR=<DIR-APLIKASI> \
+#   DEPLOY_PM2_NAME=oase1-lontar \
 #   scripts/deploy.sh          # dry-run
 #   ... scripts/deploy.sh --go # sungguhan
 set -euo pipefail
@@ -35,8 +37,12 @@ esac
 
 : "${DEPLOY_HOST:?Set DEPLOY_HOST}"
 : "${DEPLOY_USER:?Set DEPLOY_USER}"
-: "${DEPLOY_PATH:?Set DEPLOY_PATH (harus berakhiran /app)}"
-: "${DEPLOY_RUNTIME_ENV:?Set DEPLOY_RUNTIME_ENV (jalur env.sh di server)}"
+if [[ -n "${DEPLOY_DIR:-}" ]]; then
+  DEPLOY_PATH="${DEPLOY_PATH:-${DEPLOY_DIR%/}/app}"
+  DEPLOY_RUNTIME_ENV="${DEPLOY_RUNTIME_ENV:-${DEPLOY_DIR%/}/runtime/env.sh}"
+fi
+: "${DEPLOY_PATH:?Set DEPLOY_DIR atau DEPLOY_PATH (harus berakhiran /app)}"
+: "${DEPLOY_RUNTIME_ENV:?Set DEPLOY_DIR atau DEPLOY_RUNTIME_ENV (jalur env.sh di server)}"
 : "${DEPLOY_PM2_NAME:?Set DEPLOY_PM2_NAME}"
 
 # Nilai-nilai ini disisipkan ke perintah di server (termasuk rm -rf), jadi hanya
@@ -45,7 +51,7 @@ esac
 [[ "$DEPLOY_USER" =~ ^[A-Za-z0-9._-]+$ ]] || fail "DEPLOY_USER berisi karakter tidak lazim"
 [[ "$DEPLOY_PM2_NAME" =~ ^[A-Za-z0-9._-]+$ ]] || fail "DEPLOY_PM2_NAME berisi karakter tidak lazim"
 [[ "$DEPLOY_PATH" =~ ^/[A-Za-z0-9._/-]+/app$ ]] ||
-  fail "DEPLOY_PATH harus jalur absolut berakhiran /app (contoh: /var/www/mhs/oase1/app)"
+  fail "DEPLOY_PATH harus jalur absolut berakhiran /app (contoh: /srv/lontar/app)"
 [[ "$DEPLOY_RUNTIME_ENV" =~ ^/[A-Za-z0-9._/-]+$ ]] || fail "DEPLOY_RUNTIME_ENV harus jalur absolut"
 [[ "$DEPLOY_PATH" != *..* && "$DEPLOY_RUNTIME_ENV" != *..* ]] || fail "jalur tidak boleh memuat '..'"
 
