@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createManuscript } from "../actions";
-import { COMMON_SCRIPTS } from "@/lib/script-label";
 
 async function getImageDimensions(
   file: File
@@ -17,10 +15,12 @@ async function getImageDimensions(
 }
 
 export default function NewManuscriptPage() {
+  const [code, setCode] = useState("");
+  const [title, setTitle] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
-  const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
 
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
@@ -35,24 +35,90 @@ export default function NewManuscriptPage() {
       setError("Pilih minimal 1 gambar halaman");
       return;
     }
-    if (!script.trim()) {
-      setError("Aksara wajib diisi");
-      return;
-    }
 
     setLoading(true);
     setError("");
+    setProgress("Membuat naskah...");
 
-    const formData = new FormData(e.currentTarget);
-    const dims = await Promise.all(files.map(getImageDimensions));
-    formData.set("dimensions_imgs", JSON.stringify(dims));
-    formData.set("script", script);
+    try {
+      // 1. Buat manuscript → dapat ID
+      const initRes = await fetch("/api/upload/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, title }),
+      });
+      const initData = await initRes.json();
 
-    const result = await createManuscript(formData);
+      if (!initRes.ok) {
+        throw new Error(initData.error || "Gagal buat naskah");
+      }
 
-    if (result?.error) {
-      setError(result.error);
+      const manuscriptId = initData.manuscriptId;
+
+      // 2. Ambil dimensi semua gambar
+      setProgress("Membaca dimensi gambar...");
+      const dims = await Promise.all(files.map(getImageDimensions));
+
+      // 3. Upload tiap file langsung ke Supabase
+      const uploadedFiles: { path: string; w: number; h: number }[] = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setProgress(`Upload ${i + 1}/${files.length}...`);
+
+        const urlRes = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            manuscriptId,
+            filename: file.name,
+            contentType: file.type,
+          }),
+        });
+
+        const urlData = await urlRes.json();
+        if (!urlRes.ok) {
+          throw new Error(
+            urlData.error || `Gagal siapkan upload file ${i + 1}`
+          );
+        }
+
+        const uploadRes = await fetch(urlData.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        if (!uploadRes.ok) {
+          throw new Error(`Gagal upload file ${i + 1}`);
+        }
+
+        uploadedFiles.push({
+          path: urlData.path,
+          w: dims[i].w,
+          h: dims[i].h,
+        });
+      }
+
+      // 4. Simpan data halaman
+      setProgress("Menyimpan data...");
+      const finalRes = await fetch("/api/upload/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manuscriptId, files: uploadedFiles }),
+      });
+
+      const finalData = await finalRes.json();
+      if (!finalRes.ok) {
+        throw new Error(finalData.error || "Gagal simpan data");
+      }
+
+      // 5. Redirect
+      window.location.href = `/admin/naskah/${manuscriptId}`;
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan");
       setLoading(false);
+      setProgress("");
     }
   }
 
@@ -73,249 +139,53 @@ export default function NewManuscriptPage() {
         </div>
       </div>
 
+      <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-900 max-w-2xl">
+        💡 <strong>Info:</strong> Admin hanya perlu mengisi{" "}
+        <strong>kode naskah</strong> dan <strong>gambar halaman</strong>.{" "}
+        <strong>Judul &amp; metadata lengkap</strong> akan diisi oleh
+        kontributor.
+      </div>
+
       <form
         onSubmit={handleSubmit}
         className="bg-white rounded-xl border border-sky-100 p-6 space-y-6 max-w-3xl shadow-sm"
       >
-        {/* ============ SECTION 1: IDENTITAS ============ */}
         <div>
           <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
-            📖 Identitas Naskah
+            🔖 Info Naskah
           </h2>
-
           <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Kode Naskah
-                </label>
-                <input
-                  type="text"
-                  name="code"
-                  placeholder="cth: MS-001 / UINSGD-01"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Judul Naskah <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  placeholder="cth: Masā'il at-Ta'līm"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Aksara <span className="text-red-500">*</span>
+                Kode Naskah
               </label>
               <input
                 type="text"
-                value={script}
-                onChange={(e) => setScript(e.target.value)}
-                required
-                placeholder="cth: Pegon, Carakan, Jawi, Bali..."
-                list="common-scripts"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="cth: 0179 00004"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
-              <datalist id="common-scripts">
-                {COMMON_SCRIPTS.map((s) => (
-                  <option key={s} value={s} />
-                ))}
-              </datalist>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {COMMON_SCRIPTS.slice(0, 6).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setScript(s)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
-                      script === s
-                        ? "bg-teal-600 text-white"
-                        : "bg-sky-50 text-slate-700 hover:bg-sky-100 border border-sky-200"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Bahasa
-                </label>
-                <input
-                  type="text"
-                  name="language"
-                  placeholder="cth: Latin Jawa, Arab Pegon"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Pengarang / Penulis
-                </label>
-                <input
-                  type="text"
-                  name="author"
-                  placeholder="cth: Anonim"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============ SECTION 2: FISIK ============ */}
-        <div>
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
-            📅 Metadata Fisik
-          </h2>
-
-          <div className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Tahun / Periode
-                </label>
-                <input
-                  type="text"
-                  name="period"
-                  placeholder="cth: 1545 Saka Jawa (1623 Masehi)"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Tahun (Angka)
-                </label>
-                <input
-                  type="text"
-                  name="year"
-                  placeholder="cth: 1623"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Jenis Bahan
-                </label>
-                <input
-                  type="text"
-                  name="mediaType"
-                  placeholder="cth: Kertas Daluwang, Lontar, Eropa"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Ukuran Kertas
-                </label>
-                <input
-                  type="text"
-                  name="dimensions"
-                  placeholder="cth: 20 cm x 10 cm (Horizontal)"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Illuminasi
-                </label>
-                <select
-                  name="illumination"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                >
-                  <option value="">— Belum dicek —</option>
-                  <option value="Ya">Ya</option>
-                  <option value="Tidak">Tidak</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Ilustrasi
-                </label>
-                <input
-                  type="text"
-                  name="illustration"
-                  placeholder="cth: Ada, halaman 5"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Watermark
-                </label>
-                <input
-                  type="text"
-                  name="watermark"
-                  placeholder="cth: Cap Perpusnas"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============ SECTION 3: KONTEN & SUMBER ============ */}
-        <div>
-          <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
-            📚 Sumber & Konten
-          </h2>
-
-          <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Sumber / Asal Koleksi
+                Judul Naskah{" "}
+                <span className="text-slate-400 font-normal">
+                  (opsional)
+                </span>
               </label>
               <input
                 type="text"
-                name="source"
-                placeholder="cth: Koleksi UIN Salatiga, Perpusnas"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Abstrak (Isi Teks)
-              </label>
-              <textarea
-                name="abstract"
-                rows={4}
-                placeholder="Ringkasan isi teks naskah, tema utama, atau catatan penting tentang konten..."
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
-                Deskripsi Singkat
-              </label>
-              <textarea
-                name="description"
-                rows={3}
-                placeholder="Deskripsi singkat tentang naskah (untuk tampilan di homepage)..."
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Kosongkan jika belum tahu"
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
             </div>
           </div>
         </div>
 
-        {/* ============ SECTION 4: GAMBAR ============ */}
         <div>
           <h2 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 pb-2 border-b border-sky-100">
             🖼️ Gambar Halaman
@@ -327,15 +197,13 @@ export default function NewManuscriptPage() {
             </label>
             <input
               type="file"
-              name="pages"
               multiple
               accept="image/*"
               onChange={handleFiles}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Urutan file = urutan halaman. Disarankan nama file urut (01.jpg,
-              02.jpg, ...)
+              Urutan file = urutan halaman. Tidak ada limit jumlah file.
             </p>
           </div>
 
@@ -361,6 +229,12 @@ export default function NewManuscriptPage() {
             </div>
           )}
         </div>
+
+        {progress && !error && (
+          <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-sm text-sky-800 font-medium">
+            ⏳ {progress}
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">

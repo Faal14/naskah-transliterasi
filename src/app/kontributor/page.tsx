@@ -79,10 +79,10 @@ export default async function KontributorHome() {
                   </h2>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(
-                      m.script
+                      m.script!
                     )}`}
                   >
-                    {formatScript(m.script)}
+                    {formatScript(m.script!)}
                   </span>
                 </div>
 

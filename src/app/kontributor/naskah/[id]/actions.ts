@@ -149,3 +149,60 @@ export async function saveFullText(
   revalidatePath(`/naskah`);
   return { success: true };
 }
+
+// ============ Update Metadata Naskah (termasuk Judul) ============
+export async function updateManuscriptMetadata(
+  manuscriptId: string,
+  data: {
+    title: string;
+    script: string;
+    language: string;
+    author: string;
+    period: string;
+    mediaType: string;
+    dimensions: string;
+    abstract: string;
+    illumination: string;
+    illustration: string;
+    watermark: string;
+    year: string;
+    source: string;
+    description: string;
+  }
+) {
+  await checkAuth();
+
+  if (!data.title || data.title.trim() === "") {
+    throw new Error("Judul naskah wajib diisi");
+  }
+
+  if (!data.script || data.script.trim() === "") {
+    throw new Error("Aksara wajib diisi");
+  }
+
+  await prisma.manuscript.update({
+    where: { id: manuscriptId },
+    data: {
+      title: data.title.trim(),
+      script: data.script.trim(),
+      language: data.language.trim() || null,
+      author: data.author.trim() || null,
+      period: data.period.trim() || null,
+      mediaType: data.mediaType.trim() || null,
+      dimensions: data.dimensions.trim() || null,
+      abstract: data.abstract.trim() || null,
+      illumination: data.illumination.trim() || null,
+      illustration: data.illustration.trim() || null,
+      watermark: data.watermark.trim() || null,
+      year: data.year.trim() || null,
+      source: data.source.trim() || null,
+      description: data.description.trim() || null,
+    },
+  });
+
+  revalidatePath(`/kontributor/naskah/${manuscriptId}`);
+  revalidatePath(`/naskah/${manuscriptId}`);
+  revalidatePath("/naskah");
+  revalidatePath("/admin/naskah");
+  return { success: true };
+}
