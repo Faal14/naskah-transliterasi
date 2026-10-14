@@ -154,20 +154,20 @@ export async function saveFullText(
 const optionalStr = z.string().trim().max(5000).optional();
 
 const metadataSchema = z.object({
-  title: optionalStr,
-  script: optionalStr,
-  language: optionalStr,
-  author: optionalStr,
-  period: optionalStr,
-  mediaType: optionalStr,
-  dimensions: optionalStr,
-  abstract: optionalStr,
-  illumination: optionalStr,
-  illustration: optionalStr,
-  watermark: optionalStr,
-  year: optionalStr,
-  source: optionalStr,
-  description: optionalStr,
+  title: z.string().trim().max(500).optional(),
+  script: z.string().trim().max(100).optional(),
+  language: z.string().trim().max(100).optional(),
+  author: z.string().trim().max(200).optional(),
+  period: z.string().trim().max(200).optional(),
+  mediaType: z.string().trim().max(200).optional(),
+  dimensions: z.string().trim().max(200).optional(),
+  abstract: z.string().trim().max(5000).optional(),
+  illumination: z.string().trim().max(200).optional(),
+  illustration: z.string().trim().max(500).optional(),
+  watermark: z.string().trim().max(500).optional(),
+  year: z.string().trim().max(50).optional(),
+  source: z.string().trim().max(500).optional(),
+  description: z.string().trim().max(2000).optional(),
 });
 
 export async function updateManuscriptMetadata(

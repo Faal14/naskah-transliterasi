@@ -1,168 +1,202 @@
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth";
+import { supabaseAdmin } from "@/lib/supabase";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { auth } from "@/auth";
+import SubmitButton from "./submit-button";
+import WorkArea from "./work-area";
+import MetadataForm from "./metadata-form";
 import { formatScript, getScriptColor } from "@/lib/script-label";
-import LockButton from "../../lock-button";
 
-const LOCK_TIMEOUT_HOURS = 24;
+export default async function WorkPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ p?: string }>;
+}) {
+  const { id } = await params;
+  const { p } = await searchParams;
+  const pageNum = Math.max(1, parseInt(p || "1"));
 
-export default async function KontributorHome() {
   const session = await auth();
   const user = session!.user as any;
 
-  // eslint-disable-next-line react-hooks/purity
-  const now = Date.now();
-  const cutoff = new Date(now - LOCK_TIMEOUT_HOURS * 60 * 60 * 1000);
-  await prisma.manuscript.updateMany({
-    where: {
-      lockedById: { not: null },
-      lockedAt: { lt: cutoff },
-    },
-    data: { lockedById: null, lockedAt: null },
-  });
-
-  const manuscripts = await prisma.manuscript.findMany({
-    orderBy: { createdAt: "desc" },
+  const manuscript = await prisma.manuscript.findUnique({
+    where: { id },
     include: {
       lockedBy: { select: { id: true, name: true } },
-      pages: {
-        include: { _count: { select: { annotations: true } } },
-      },
+      pages: { orderBy: { pageNumber: "asc" } },
     },
   });
+
+  if (!manuscript) notFound();
+
+  const isLockedByOther =
+    manuscript.lockedById !== null &&
+    manuscript.lockedById !== user.id &&
+    user.role !== "ADMIN";
+
+  if (isLockedByOther) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-8 text-center">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-xl font-bold text-amber-900 mb-2">
+            Naskah Sedang Dikerjakan
+          </h1>
+          <p className="text-amber-800 mb-6">
+            Naskah ini sedang dikerjakan oleh{" "}
+            <strong>{manuscript.lockedBy?.name}</strong>. Anda tidak dapat
+            membuat anotasi sampai naskah dilepas.
+          </p>
+          <Link
+            href="/kontributor"
+            className="inline-block bg-amber-600 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-amber-700 transition"
+          >
+            ← Kembali ke Daftar Naskah
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const currentPage = manuscript.pages.find(
+    (pg) => pg.pageNumber === pageNum
+  );
+  if (!currentPage) notFound();
+
+  const { data: signed } = await supabaseAdmin.storage
+    .from("manuscripts")
+    .createSignedUrl(currentPage.imageUrl, 3600);
+
+  const imageUrl = signed?.signedUrl || "";
+
+  const annotations = await prisma.annotation.findMany({
+    where: { pageId: currentPage.id },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const totalPages = manuscript.pages.length;
+  const prevPage = pageNum > 1 ? pageNum - 1 : null;
+  const nextPage = pageNum < totalPages ? pageNum + 1 : null;
+  const draftCount = annotations.filter((a) => a.status === "DRAFT").length;
+
+  const isMetadataComplete = !!manuscript.script && !!manuscript.title;
 
   return (
     <div>
-      <div className="flex items-center gap-3 mb-2">
-        <div className="w-1 h-6 bg-teal-500 rounded"></div>
-        <h1 className="text-2xl font-bold text-blue-900">Daftar Naskah</h1>
-      </div>
-      <p className="text-sm text-slate-600 mb-6 ml-4">
-        Ambil naskah untuk mulai mengerjakan. Satu naskah hanya bisa dikerjakan
-        oleh satu kontributor.
-      </p>
+      <div className="mb-4">
+        <Link
+          href="/kontributor"
+          className="text-sm text-slate-600 hover:text-teal-700 hover:underline transition"
+        >
+          ← Daftar Naskah
+        </Link>
+        <div className="flex items-center justify-between mt-2 flex-wrap gap-3">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="w-1 h-6 bg-teal-500 rounded"></div>
+              <h1 className="text-xl font-bold text-blue-900">
+                {manuscript.title || `Naskah ${manuscript.code || "tanpa judul"}`}
+              </h1>
+            </div>
+            <div className="flex gap-3 mt-2 text-sm text-slate-600 ml-4 items-center flex-wrap">
+              {manuscript.script && (
+                <span
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${getScriptColor(
+                    manuscript.script
+                  )}`}
+                >
+                  {formatScript(manuscript.script)}
+                </span>
+              )}
+              <span>
+                Halaman {pageNum} dari {totalPages}
+              </span>
+              <span>·</span>
+              <span>{annotations.length} anotasi</span>
+            </div>
+          </div>
 
-      {manuscripts.length === 0 ? (
-        <div className="bg-white rounded-xl border border-sky-100 p-12 text-center text-slate-500 shadow-sm">
-          Belum ada naskah yang tersedia.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {manuscripts.map((m) => {
-            const totalPages = m.pages.length;
-            const annotatedPages = m.pages.filter(
-              (p) => p._count.annotations > 0
-            ).length;
-            const progress =
-              totalPages > 0
-                ? Math.round((annotatedPages / totalPages) * 100)
-                : 0;
-
-            const isLockedByMe = m.lockedById === user.id;
-            const isLockedByOther =
-              m.lockedById !== null && m.lockedById !== user.id;
-            const isFree = m.lockedById === null;
-
-            return (
-              <div
-                key={m.id}
-                className={`bg-white rounded-xl border-2 p-5 transition-all ${
-                  isLockedByMe
-                    ? "border-teal-400 shadow-md"
-                    : isLockedByOther
-                      ? "border-slate-200 opacity-80"
-                      : "border-sky-100 hover:border-teal-300 hover:shadow-md"
-                }`}
+          <div className="flex gap-2 items-center">
+            <SubmitButton
+              pageId={currentPage.id}
+              annotationCount={draftCount}
+            />
+            {prevPage ? (
+              <Link
+                href={`/kontributor/naskah/${id}?p=${prevPage}`}
+                className="px-3 py-1.5 text-sm bg-white border border-sky-200 rounded-lg hover:bg-sky-50 hover:border-teal-400 transition text-blue-900"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <h2 className="font-bold text-lg text-slate-900 leading-tight">
-                    {m.title || "Tanpa judul"}
-                  </h2>
-                  <span
-                    className={`px-2 py-0.5 rounded text-xs font-semibold whitespace-nowrap ml-2 ${getScriptColor(
-                      m.script
-                    )}`}
-                  >
-                    {formatScript(m.script)}
-                  </span>
-                </div>
-
-                <div className="text-sm text-slate-700 space-y-1 mb-4">
-                  {m.year && <p>Tahun: {m.year}</p>}
-                  {m.source && <p>Sumber: {m.source}</p>}
-                  <p>{totalPages} halaman</p>
-                </div>
-
-                {isLockedByMe && (
-                  <div className="bg-teal-50 border border-teal-200 rounded-lg p-2 mb-3 text-xs text-teal-800 font-medium flex items-center gap-2">
-                    <span>✅</span>
-                    <span>Naskah ini milik Anda</span>
-                  </div>
-                )}
-
-                {isLockedByOther && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 mb-3 text-xs text-slate-700 flex items-center gap-2">
-                    <span>🔒</span>
-                    <span>
-                      Sedang dikerjakan <strong>{m.lockedBy?.name}</strong>
-                    </span>
-                  </div>
-                )}
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between text-xs text-slate-600 mb-1">
-                    <span>Progress</span>
-                    <span className="font-medium">
-                      {annotatedPages}/{totalPages} halaman ({progress}%)
-                    </span>
-                  </div>
-                  <div className="w-full bg-sky-100 rounded-full h-1.5">
-                    <div
-                      className="bg-teal-600 h-1.5 rounded-full transition-all"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-
-                {isFree && (
-                  <LockButton
-                    manuscriptId={m.id}
-                    action="lock"
-                    label="🔓 Ambil Naskah"
-                    variant="primary"
-                  />
-                )}
-
-                {isLockedByMe && (
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/kontributor/naskah/${m.id}`}
-                      className="flex-1 bg-gradient-to-r from-teal-600 to-teal-700 text-white py-2 rounded-lg text-sm font-medium hover:from-teal-700 hover:to-teal-800 shadow-sm transition text-center"
-                    >
-                      Lanjut Kerjakan
-                    </Link>
-                    <LockButton
-                      manuscriptId={m.id}
-                      action="unlock"
-                      label="Lepas"
-                      variant="secondary"
-                    />
-                  </div>
-                )}
-
-                {isLockedByOther && (
-                  <button
-                    disabled
-                    className="w-full bg-slate-100 text-slate-400 py-2 rounded-lg text-sm font-medium cursor-not-allowed border border-slate-200"
-                  >
-                    🔒 Naskah Terkunci
-                  </button>
-                )}
-              </div>
-            );
-          })}
+                ← Sebelumnya
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-300 bg-white">
+                ← Sebelumnya
+              </span>
+            )}
+            {nextPage ? (
+              <Link
+                href={`/kontributor/naskah/${id}?p=${nextPage}`}
+                className="px-3 py-1.5 text-sm bg-white border border-sky-200 rounded-lg hover:bg-sky-50 hover:border-teal-400 transition text-blue-900"
+              >
+                Berikutnya →
+              </Link>
+            ) : (
+              <span className="px-3 py-1.5 text-sm border border-slate-200 rounded-lg text-slate-300 bg-white">
+                Berikutnya →
+              </span>
+            )}
+          </div>
         </div>
-      )}
+      </div>
+
+      <div className="max-w-4xl mx-auto">
+        {!isMetadataComplete && (
+          <MetadataForm
+            manuscriptId={id}
+            initialData={{
+              title: manuscript.title || "",
+              script: manuscript.script || "",
+              language: manuscript.language || "",
+              author: manuscript.author || "",
+              period: manuscript.period || "",
+              mediaType: manuscript.mediaType || "",
+              dimensions: manuscript.dimensions || "",
+              abstract: manuscript.abstract || "",
+              illumination: manuscript.illumination || "",
+              illustration: manuscript.illustration || "",
+              watermark: manuscript.watermark || "",
+              year: manuscript.year || "",
+              source: manuscript.source || "",
+              description: manuscript.description || "",
+            }}
+          />
+        )}
+
+        <WorkArea
+          pageId={currentPage.id}
+          imageUrl={imageUrl}
+          imageWidth={currentPage.width}
+          imageHeight={currentPage.height}
+          initialAnnotations={annotations.map((a) => ({
+            id: a.id,
+            x: a.x,
+            y: a.y,
+            w: a.w,
+            h: a.h,
+            transliteration: a.transliteration,
+            translation: a.translation,
+            notes: a.notes,
+            pegonText: a.pegonText,
+            status: a.status,
+          }))}
+          initialTransliteration={currentPage.fullTransliteration || ""}
+          initialTranslation={currentPage.fullTranslation || ""}
+          initialApparatus={currentPage.fullApparatus || ""}
+        />
+      </div>
     </div>
   );
 }
