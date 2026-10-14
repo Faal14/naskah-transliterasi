@@ -62,9 +62,7 @@ export async function updateAnnotation(
 ) {
   const user = await checkAuth();
 
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
+  const existing = await prisma.annotation.findUnique({ where: { id } });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
@@ -94,9 +92,7 @@ export async function updateAnnotation(
 export async function deleteAnnotation(id: string) {
   const user = await checkAuth();
 
-  const existing = await prisma.annotation.findUnique({
-    where: { id },
-  });
+  const existing = await prisma.annotation.findUnique({ where: { id } });
   if (!existing) throw new Error("Anotasi tidak ditemukan");
 
   if (existing.contributorId !== user.id && user.role !== "ADMIN") {
@@ -155,28 +151,24 @@ export async function saveFullText(
 
 // ============ Update Metadata Naskah ============
 
-const metadataSchema = z.object({
-  title: z.string().trim().max(500).nullable().optional(),
-  script: z.string().trim().max(100).nullable().optional(),
-  language: z.string().trim().max(100).nullable().optional(),
-  author: z.string().trim().max(200).nullable().optional(),
-  period: z.string().trim().max(200).nullable().optional(),
-  mediaType: z.string().trim().max(200).nullable().optional(),
-  dimensions: z.string().trim().max(200).nullable().optional(),
-  abstract: z.string().trim().max(5000).nullable().optional(),
-  illumination: z.string().trim().max(200).nullable().optional(),
-  illustration: z.string().trim().max(500).nullable().optional(),
-  watermark: z.string().trim().max(500).nullable().optional(),
-  year: z.string().trim().max(50).nullable().optional(),
-  source: z.string().trim().max(500).nullable().optional(),
-  description: z.string().trim().max(2000).nullable().optional(),
-});
+const optionalStr = z.string().trim().max(5000).optional();
 
-function trimmedOrNull(v: unknown): string | null {
-  if (typeof v !== "string") return null;
-  const t = v.trim();
-  return t.length > 0 ? t : null;
-}
+const metadataSchema = z.object({
+  title: optionalStr,
+  script: optionalStr,
+  language: optionalStr,
+  author: optionalStr,
+  period: optionalStr,
+  mediaType: optionalStr,
+  dimensions: optionalStr,
+  abstract: optionalStr,
+  illumination: optionalStr,
+  illustration: optionalStr,
+  watermark: optionalStr,
+  year: optionalStr,
+  source: optionalStr,
+  description: optionalStr,
+});
 
 export async function updateManuscriptMetadata(
   manuscriptId: string,
@@ -191,24 +183,45 @@ export async function updateManuscriptMetadata(
 
   const d = parsed.data;
 
+  // Judul & aksara wajib diisi saat edit
+  if (!d.title || d.title.trim() === "") {
+    throw new Error("Judul naskah wajib diisi");
+  }
+  if (!d.script || d.script.trim() === "") {
+    throw new Error("Aksara wajib diisi");
+  }
+
+  // Hanya tulis field yang dikirim (bukan undefined)
+  const updateData: Record<string, string | null> = {
+    title: d.title.trim(),
+    script: d.script.trim(),
+  };
+
+  const fields = [
+    "language",
+    "author",
+    "period",
+    "mediaType",
+    "dimensions",
+    "abstract",
+    "illumination",
+    "illustration",
+    "watermark",
+    "year",
+    "source",
+    "description",
+  ] as const;
+
+  for (const key of fields) {
+    if (d[key] !== undefined) {
+      const v = d[key]?.trim();
+      updateData[key] = v && v.length > 0 ? v : null;
+    }
+  }
+
   await prisma.manuscript.update({
     where: { id: manuscriptId },
-    data: {
-      title: trimmedOrNull(d.title),
-      script: trimmedOrNull(d.script),
-      language: trimmedOrNull(d.language),
-      author: trimmedOrNull(d.author),
-      period: trimmedOrNull(d.period),
-      mediaType: trimmedOrNull(d.mediaType),
-      dimensions: trimmedOrNull(d.dimensions),
-      abstract: trimmedOrNull(d.abstract),
-      illumination: trimmedOrNull(d.illumination),
-      illustration: trimmedOrNull(d.illustration),
-      watermark: trimmedOrNull(d.watermark),
-      year: trimmedOrNull(d.year),
-      source: trimmedOrNull(d.source),
-      description: trimmedOrNull(d.description),
-    },
+    data: updateData,
   });
 
   revalidatePath(`/kontributor/naskah/${manuscriptId}`);

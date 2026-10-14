@@ -98,7 +98,7 @@ export default async function ReviewManuscriptPage({
             <div className="flex items-center gap-3">
               <div className="w-1 h-6 bg-teal-500 rounded"></div>
               <h1 className="text-xl font-bold text-blue-900">
-                {manuscript.title}
+                {manuscript.title || "Tanpa judul"}
               </h1>
             </div>
             <div className="flex gap-3 mt-2 text-sm text-slate-600 items-center ml-4">

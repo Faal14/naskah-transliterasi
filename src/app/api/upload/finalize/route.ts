@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -82,9 +83,10 @@ export async function POST(req: Request) {
 
     const allPaths = files.map((f) => f.path);
 
+    // FIX 1: limit: 1000 (default hanya 100)
     const { data: stored, error: listError } = await supabaseAdmin.storage
       .from("manuscripts")
-      .list(manuscriptId);
+      .list(manuscriptId, { limit: 1000 });
 
     if (listError) {
       return NextResponse.json(
@@ -110,8 +112,25 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-      const size = (item.metadata?.size as number | undefined) ?? 0;
-      const mime = (item.metadata?.mimetype as string | undefined) ?? "";
+
+      // FIX 2: tolak kalau size kosong atau >15 MB
+      const size =
+        typeof item.metadata?.size === "number" ? item.metadata.size : null;
+      const mime =
+        typeof item.metadata?.mimetype === "string"
+          ? item.metadata.mimetype
+          : "";
+
+      if (size === null) {
+        await cleanupFiles(allPaths);
+        await prisma.manuscript
+          .delete({ where: { id: manuscriptId } })
+          .catch(() => {});
+        return NextResponse.json(
+          { error: `File ${i + 1} tidak punya metadata ukuran` },
+          { status: 400 }
+        );
+      }
       if (size > MAX_FILE_BYTES) {
         await cleanupFiles(allPaths);
         await prisma.manuscript
@@ -146,7 +165,17 @@ export async function POST(req: Request) {
           })),
         });
       });
-    } catch {
+    } catch (err) {
+      // FIX 3: kalau P2002 (unique constraint race), kembalikan 409 tanpa hapus
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002"
+      ) {
+        return NextResponse.json(
+          { error: "Naskah sudah punya halaman" },
+          { status: 409 }
+        );
+      }
       await cleanupFiles(allPaths);
       await prisma.manuscript
         .delete({ where: { id: manuscriptId } })

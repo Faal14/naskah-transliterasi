@@ -10,7 +10,7 @@ const MAX_FILE_BYTES = 15 * 1024 * 1024; // 15 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 async function getImageDimensions(
-  file: File
+  file: File,
 ): Promise<{ w: number; h: number }> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -105,7 +105,7 @@ export default function NewManuscriptPage() {
         const urlData = await urlRes.json();
         if (!urlRes.ok) {
           throw new Error(
-            urlData.error || `Gagal siapkan upload file ${i + 1}`
+            urlData.error || `Gagal siapkan upload file ${i + 1}`,
           );
         }
 
@@ -140,7 +140,8 @@ export default function NewManuscriptPage() {
       }
 
       // 5. Redirect (pakai base-path)
-router.push(`/admin/naskah/${manuscriptId}`);    } catch (err) {
+      router.push(`/admin/naskah/${manuscriptId}`);
+    } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan";
       setError(message);
       setLoading(false);
@@ -197,9 +198,7 @@ router.push(`/admin/naskah/${manuscriptId}`);    } catch (err) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
                 Judul Naskah{" "}
-                <span className="text-slate-400 font-normal">
-                  (opsional)
-                </span>
+                <span className="text-slate-400 font-normal">(opsional)</span>
               </label>
               <input
                 type="text"
@@ -229,8 +228,8 @@ router.push(`/admin/naskah/${manuscriptId}`);    } catch (err) {
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Urutan file = urutan halaman. Maks {MAX_PAGES} halaman, maks 15
-              MB per file. Format: JPEG, PNG, WebP.
+              Urutan file = urutan halaman. Maks {MAX_PAGES} halaman, maks 15 MB
+              per file. Format: JPEG, PNG, WebP.
             </p>
           </div>
 
