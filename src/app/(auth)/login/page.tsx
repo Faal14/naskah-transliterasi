@@ -29,7 +29,11 @@ function LoginForm() {
 
       if (res?.error) {
         setLoading(false);
-        setError("Email atau password salah");
+        setError(
+          res.code === "rate_limited"
+            ? "Terlalu banyak percobaan. Coba lagi dalam 15 menit."
+            : "Email atau password salah"
+        );
         return;
       }
 
@@ -130,30 +134,6 @@ function LoginForm() {
             >
               Daftar sebagai kontributor
             </Link>
-          </p>
-        </div>
-
-        <div className="mt-6 bg-white/80 backdrop-blur border border-sky-100 rounded-xl p-4 text-xs text-slate-600 text-center space-y-1">
-          <p className="font-medium text-slate-700 mb-1">🔑 Akun Demo</p>
-          <p>
-            Admin:{" "}
-            <code className="bg-sky-50 px-1 rounded text-blue-800">
-              admin@naskah.id
-            </code>{" "}
-            /{" "}
-            <code className="bg-sky-50 px-1 rounded text-blue-800">
-              admin123
-            </code>
-          </p>
-          <p>
-            Kontributor:{" "}
-            <code className="bg-teal-50 px-1 rounded text-teal-800">
-              test@naskah.id
-            </code>{" "}
-            /{" "}
-            <code className="bg-teal-50 px-1 rounded text-teal-800">
-              test123
-            </code>
           </p>
         </div>
       </div>

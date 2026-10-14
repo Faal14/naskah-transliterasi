@@ -131,7 +131,9 @@ export default async function DashboardPage() {
           <form
             action={async () => {
               "use server";
-              await signOut({ redirectTo: "/login" });
+              // redirectTo milik Auth.js tidak mengenal basePath; redirect() Next menambahkannya.
+              await signOut({ redirect: false });
+              redirect("/login");
             }}
           >
             <button

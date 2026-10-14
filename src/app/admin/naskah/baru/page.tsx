@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { createManuscript } from "../actions";
 import { COMMON_SCRIPTS } from "@/lib/script-label";
 
@@ -15,6 +16,12 @@ async function getImageDimensions(
     img.src = URL.createObjectURL(file);
   });
 }
+
+// Samakan dengan batas di server: bodySizeLimit (next.config.ts) dan createManuscript.
+const MAX_TOTAL_MB = 50;
+const MAX_FILE_MB = 15;
+const MAX_PAGES = 200;
+const MB = 1024 * 1024;
 
 export default function NewManuscriptPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -39,6 +46,24 @@ export default function NewManuscriptPage() {
       setError("Aksara wajib diisi");
       return;
     }
+    if (files.length > MAX_PAGES) {
+      setError(`Maksimal ${MAX_PAGES} halaman per naskah (dipilih ${files.length})`);
+      return;
+    }
+    const tooBig = files.find((f) => f.size > MAX_FILE_MB * MB);
+    if (tooBig) {
+      setError(`"${tooBig.name}" melebihi ${MAX_FILE_MB} MB per gambar`);
+      return;
+    }
+    // sisakan 1 MB untuk kolom formulir dan pembungkus multipart
+    const totalMb = files.reduce((sum, f) => sum + f.size, 0) / MB;
+    if (totalMb > MAX_TOTAL_MB - 1) {
+      setError(
+        `Total ukuran gambar ${totalMb.toFixed(1)} MB melebihi batas ${MAX_TOTAL_MB} MB per unggahan. ` +
+          "Perkecil gambar atau kurangi jumlah halaman."
+      );
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -48,10 +73,21 @@ export default function NewManuscriptPage() {
     formData.set("dimensions_imgs", JSON.stringify(dims));
     formData.set("script", script);
 
-    const result = await createManuscript(formData);
+    try {
+      const result = await createManuscript(formData);
 
-    if (result?.error) {
-      setError(result.error);
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+      }
+    } catch (err) {
+      // redirect setelah berhasil juga tiba di sini sebagai error: teruskan ke Next
+      unstable_rethrow(err);
+      // mis. server atau Nginx menolak kiriman karena terlalu besar
+      console.error(err);
+      setError(
+        `Unggahan ditolak server. Pastikan total ukuran gambar di bawah ${MAX_TOTAL_MB} MB, lalu coba lagi.`
+      );
       setLoading(false);
     }
   }
@@ -329,7 +365,7 @@ export default function NewManuscriptPage() {
               type="file"
               name="pages"
               multiple
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleFiles}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
             />

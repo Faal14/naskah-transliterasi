@@ -5,6 +5,35 @@ import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+const MAX_PAGES = 200;
+const MAX_FILE_BYTES = 15 * 1024 * 1024;
+// ekstensi diturunkan dari MIME, bukan dari nama file
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+const imgDimsSchema = z
+  .array(
+    z.object({
+      w: z.number().int().min(0).max(100_000),
+      h: z.number().int().min(0).max(100_000),
+    })
+  )
+  .max(MAX_PAGES);
+
+function parseImgDims(json: FormDataEntryValue | null) {
+  if (typeof json !== "string") return null;
+  try {
+    const parsed = imgDimsSchema.safeParse(JSON.parse(json));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function createManuscript(formData: FormData) {
   const session = await auth();
@@ -27,15 +56,30 @@ export async function createManuscript(formData: FormData) {
   const year = formData.get("year") as string;
   const source = formData.get("source") as string;
   const description = formData.get("description") as string;
-  const files = formData.getAll("pages") as File[];
-  const dimensionsJson = formData.get("dimensions_imgs") as string;
-  const imgDims = JSON.parse(dimensionsJson) as { w: number; h: number }[];
+  const files = formData
+    .getAll("pages")
+    .filter((f): f is File => f instanceof File && f.size > 0);
+  const imgDims = parseImgDims(formData.get("dimensions_imgs"));
 
   if (!title || !script) {
     return { error: "Judul dan aksara wajib diisi" };
   }
   if (files.length === 0) {
     return { error: "Minimal upload 1 gambar halaman" };
+  }
+  if (files.length > MAX_PAGES) {
+    return { error: `Maksimal ${MAX_PAGES} halaman per naskah` };
+  }
+  if (!imgDims) {
+    return { error: "Data dimensi gambar tidak valid" };
+  }
+  for (let i = 0; i < files.length; i++) {
+    if (!IMAGE_EXTENSIONS[files[i].type]) {
+      return { error: `Gambar ${i + 1}: hanya JPEG, PNG, atau WebP` };
+    }
+    if (files[i].size > MAX_FILE_BYTES) {
+      return { error: `Gambar ${i + 1}: ukuran maksimal 15 MB` };
+    }
   }
 
   const manuscript = await prisma.manuscript.create({
@@ -58,35 +102,50 @@ export async function createManuscript(formData: FormData) {
     },
   });
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const dim = imgDims[i] || { w: 1000, h: 1400 };
-    const ext = file.name.split(".").pop() || "jpg";
-    const path = `${manuscript.id}/${i + 1}.${ext}`;
+  const uploaded: string[] = [];
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const dim = imgDims[i] || { w: 1000, h: 1400 };
+      const path = `${manuscript.id}/${i + 1}.${IMAGE_EXTENSIONS[file.type]}`;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+      const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from("manuscripts")
-      .upload(path, buffer, {
-        contentType: file.type,
-        upsert: false,
+      const { error: uploadError } = await supabaseAdmin.storage
+        .from("manuscripts")
+        .upload(path, buffer, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new Error(`Upload gambar ${i + 1}: ${uploadError.message}`);
+      }
+      uploaded.push(path);
+
+      await prisma.page.create({
+        data: {
+          manuscriptId: manuscript.id,
+          pageNumber: i + 1,
+          imageUrl: path,
+          width: dim.w || 1000,
+          height: dim.h || 1400,
+        },
       });
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError);
-      return { error: `Gagal upload gambar ${i + 1}: ${uploadError.message}` };
     }
-
-    await prisma.page.create({
-      data: {
-        manuscriptId: manuscript.id,
-        pageNumber: i + 1,
-        imageUrl: path,
-        width: dim.w || 1000,
-        height: dim.h || 1400,
-      },
-    });
+  } catch (err) {
+    console.error("createManuscript:", err);
+    // Jangan tinggalkan naskah setengah jadi: hapus file yang sudah terunggah dan
+    // naskahnya (halaman ikut terhapus lewat onDelete: Cascade).
+    try {
+      if (uploaded.length > 0) {
+        await supabaseAdmin.storage.from("manuscripts").remove(uploaded);
+      }
+      await prisma.manuscript.delete({ where: { id: manuscript.id } });
+    } catch (cleanupErr) {
+      console.error("createManuscript cleanup:", cleanupErr);
+    }
+    return { error: "Gagal mengunggah naskah. Tidak ada data yang disimpan." };
   }
 
   revalidatePath("/admin/naskah");

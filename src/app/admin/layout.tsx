@@ -1,5 +1,4 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 
 export default async function AdminLayout({
@@ -7,11 +6,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
-
-  const user = session.user as any;
-  if (user.role !== "ADMIN") redirect("/dashboard");
+  const user = await requireAdmin();
 
   return (
     <div className="min-h-screen bg-sky-50">
