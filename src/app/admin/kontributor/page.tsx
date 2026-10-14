@@ -1,7 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/require-admin";
 import { approveUser, rejectUser } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function KontributorPage() {
+  await requireAdmin();
+
   const pendingUsers = await prisma.user.findMany({
     where: { status: "PENDING" },
     orderBy: { createdAt: "desc" },

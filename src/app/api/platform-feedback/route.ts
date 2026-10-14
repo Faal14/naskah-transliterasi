@@ -1,11 +1,47 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { clientIp, rateLimit, HOUR } from "@/lib/rate-limit";
+
+const limitSchema = z.coerce
+  .number()
+  .int()
+  .catch(20)
+  .transform((n) => Math.min(50, Math.max(1, n)));
+
+const feedbackSchema = z.object(
+  {
+    action: z.enum(["rate", "review", "both"], "Aksi tidak valid"),
+    score: z
+      .number("Rating harus 1-5")
+      .int("Rating harus 1-5")
+      .min(1, "Rating harus 1-5")
+      .max(5, "Rating harus 1-5")
+      .optional(),
+    reviewContent: z
+      .string("Ulasan tidak valid")
+      .trim()
+      .max(500, "Ulasan maksimal 500 karakter")
+      .optional(),
+    guestName: z
+      .string("Nama tidak valid")
+      .trim()
+      .max(60, "Nama maksimal 60 karakter")
+      .optional(),
+    // dibuat klien: guest_<Date.now()>_<acak base36>
+    guestId: z
+      .string("Guest ID tidak valid")
+      .regex(/^guest_\d{10,16}_[a-z0-9]{1,16}$/, "Guest ID tidak valid")
+      .optional(),
+  },
+  "Permintaan tidak valid"
+);
 
 // GET — ambil semua rating + review
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const limit = searchParams.get("limit");
+  const limit = limitSchema.parse(searchParams.get("limit") ?? 20);
 
   const [ratings, reviews] = await Promise.all([
     prisma.platformRating.findMany({
@@ -13,7 +49,7 @@ export async function GET(req: Request) {
     }),
     prisma.platformReview.findMany({
       orderBy: { createdAt: "desc" },
-      take: limit ? parseInt(limit) : undefined,
+      take: limit,
     }),
   ]);
 
@@ -40,28 +76,30 @@ export async function GET(req: Request) {
 
 // POST — submit rating &/atau review
 export async function POST(req: Request) {
+  const limited = rateLimit(`feedback:${clientIp(req.headers)}`, 10, HOUR);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Terlalu banyak kiriman. Coba lagi nanti." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfter) } }
+    );
+  }
+
   try {
-    const body = await req.json();
-    const {
-      score,
-      reviewContent,
-      guestName,
-      guestId,
-      action, // "rate" | "review" | "both"
-    } = body;
+    const parsed = feedbackSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0].message },
+        { status: 400 }
+      );
+    }
+    // action: "rate" | "review" | "both"
+    const { score, reviewContent, guestName, guestId, action } = parsed.data;
 
     const session = await auth();
     const user = session?.user as any;
 
     // Submit rating
     if ((action === "rate" || action === "both") && score) {
-      if (score < 1 || score > 5) {
-        return NextResponse.json(
-          { error: "Rating harus 1-5" },
-          { status: 400 }
-        );
-      }
-
       if (user) {
         // Upsert: 1 user = 1 rating
         const existing = await prisma.platformRating.findFirst({
@@ -105,16 +143,9 @@ export async function POST(req: Request) {
 
     // Submit review
     if (action === "review" || action === "both") {
-      if (!reviewContent || reviewContent.trim().length < 5) {
+      if (!reviewContent || reviewContent.length < 5) {
         return NextResponse.json(
           { error: "Ulasan minimal 5 karakter" },
-          { status: 400 }
-        );
-      }
-
-      if (reviewContent.length > 500) {
-        return NextResponse.json(
-          { error: "Ulasan maksimal 500 karakter" },
           { status: 400 }
         );
       }
@@ -124,13 +155,13 @@ export async function POST(req: Request) {
       if (user) {
         displayName = user.name;
       } else {
-        if (!guestName || guestName.trim().length < 2) {
+        if (!guestName || guestName.length < 2) {
           return NextResponse.json(
             { error: "Nama minimal 2 karakter" },
             { status: 400 }
           );
         }
-        displayName = guestName.trim();
+        displayName = guestName;
       }
 
       await prisma.platformReview.create({
@@ -138,16 +169,16 @@ export async function POST(req: Request) {
           userId: user?.id || null,
           guestId: guestId || null,
           displayName,
-          content: reviewContent.trim(),
+          content: reviewContent,
         },
       });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    console.error(err);
+  } catch (err) {
+    console.error("platform-feedback:", err);
     return NextResponse.json(
-      { error: err.message || "Gagal menyimpan" },
+      { error: "Gagal menyimpan" },
       { status: 500 }
     );
   }
