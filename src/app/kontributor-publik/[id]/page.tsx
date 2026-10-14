@@ -65,7 +65,13 @@ export default async function KontributorProfilePublicPage({
   // Naskah unik yang dikerjakan
   const uniqueManuscripts = new Map<
     string,
-    { id: string; title: string; script: string; year: string | null; count: number }
+    {
+      id: string;
+      title: string | null;
+      script: string | null;
+      year: string | null;
+      count: number;
+    }
   >();
   annotations.forEach((a) => {
     const m = a.page.manuscript;
@@ -240,7 +246,7 @@ export default async function KontributorProfilePublicPage({
                         {formatScript(m.script)}
                       </span>
                       <span className="font-medium text-slate-800 truncate group-hover:text-teal-700">
-                        {m.title}
+                        {m.title || "Tanpa judul"}
                       </span>
                       {m.year && (
                         <span className="text-xs text-slate-500 whitespace-nowrap">

@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { withBasePath } from "@/lib/base-path";
+
+const MAX_PAGES = 200;
+const MAX_FILE_BYTES = 15 * 1024 * 1024; // 15 MB
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 async function getImageDimensions(
   file: File
@@ -15,6 +21,7 @@ async function getImageDimensions(
 }
 
 export default function NewManuscriptPage() {
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [title, setTitle] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -25,6 +32,25 @@ export default function NewManuscriptPage() {
 
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files || []);
+    setError("");
+
+    if (list.length > MAX_PAGES) {
+      setError(`Maksimal ${MAX_PAGES} halaman per naskah`);
+      return;
+    }
+
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i];
+      if (!ALLOWED_TYPES.includes(f.type)) {
+        setError(`File ${i + 1}: hanya JPEG, PNG, atau WebP`);
+        return;
+      }
+      if (f.size > MAX_FILE_BYTES) {
+        setError(`File ${i + 1}: ukuran maksimal 15 MB`);
+        return;
+      }
+    }
+
     setFiles(list);
     setPreviews(list.map((f) => URL.createObjectURL(f)));
   }
@@ -42,7 +68,7 @@ export default function NewManuscriptPage() {
 
     try {
       // 1. Buat manuscript → dapat ID
-      const initRes = await fetch("/api/upload/init", {
+      const initRes = await fetch(withBasePath("/api/upload/init"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, title }),
@@ -66,7 +92,7 @@ export default function NewManuscriptPage() {
         const file = files[i];
         setProgress(`Upload ${i + 1}/${files.length}...`);
 
-        const urlRes = await fetch("/api/upload", {
+        const urlRes = await fetch(withBasePath("/api/upload"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -102,7 +128,7 @@ export default function NewManuscriptPage() {
 
       // 4. Simpan data halaman
       setProgress("Menyimpan data...");
-      const finalRes = await fetch("/api/upload/finalize", {
+      const finalRes = await fetch(withBasePath("/api/upload/finalize"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ manuscriptId, files: uploadedFiles }),
@@ -113,10 +139,11 @@ export default function NewManuscriptPage() {
         throw new Error(finalData.error || "Gagal simpan data");
       }
 
-      // 5. Redirect
-      window.location.href = `/admin/naskah/${manuscriptId}`;
-    } catch (err: any) {
-      setError(err.message || "Terjadi kesalahan");
+      // 5. Redirect (pakai base-path)
+      router.push(withBasePath(`/admin/naskah/${manuscriptId}`));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Terjadi kesalahan";
+      setError(message);
       setLoading(false);
       setProgress("");
     }
@@ -198,12 +225,13 @@ export default function NewManuscriptPage() {
             <input
               type="file"
               multiple
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               onChange={handleFiles}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-900 file:mr-3 file:py-1 file:px-3 file:rounded file:border-0 file:bg-teal-50 file:text-teal-700 file:font-medium file:cursor-pointer"
             />
             <p className="text-xs text-slate-500 mt-1">
-              Urutan file = urutan halaman. Tidak ada limit jumlah file.
+              Urutan file = urutan halaman. Maks {MAX_PAGES} halaman, maks 15
+              MB per file. Format: JPEG, PNG, WebP.
             </p>
           </div>
 
@@ -214,16 +242,13 @@ export default function NewManuscriptPage() {
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {previews.map((src, i) => (
-                  <div key={i} className="relative">
-                    <img
-                      src={src}
-                      alt={`Preview ${i + 1}`}
-                      className="w-full h-24 object-cover rounded border border-slate-200"
-                    />
-                    <span className="absolute top-1 left-1 bg-blue-900/80 text-white text-xs px-1.5 py-0.5 rounded">
-                      {i + 1}
-                    </span>
-                  </div>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={i}
+                    src={src}
+                    alt={`Preview ${i + 1}`}
+                    className="w-full h-24 object-cover rounded border border-slate-200"
+                  />
                 ))}
               </div>
             </div>

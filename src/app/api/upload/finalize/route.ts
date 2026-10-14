@@ -1,6 +1,20 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+
+const MAX_PAGES = 200;
+
+const fileSchema = z.object({
+  path: z.string().min(1).max(500),
+  w: z.number().int().min(0).max(100_000).optional().default(1000),
+  h: z.number().int().min(0).max(100_000).optional().default(1400),
+});
+
+const finalizeSchema = z.object({
+  manuscriptId: z.string().min(1).max(100),
+  files: z.array(fileSchema).min(1).max(MAX_PAGES),
+});
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -10,12 +24,26 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { manuscriptId, files } = await req.json();
-
-    if (!manuscriptId || !Array.isArray(files) || files.length === 0) {
+    const body = await req.json();
+    const parsed = finalizeSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Data tidak lengkap" },
+        { error: parsed.error.issues[0]?.message || "Input tidak valid" },
         { status: 400 }
+      );
+    }
+
+    const { manuscriptId, files } = parsed.data;
+
+    // Cek manuscript ada
+    const manuscript = await prisma.manuscript.findUnique({
+      where: { id: manuscriptId },
+      select: { id: true },
+    });
+    if (!manuscript) {
+      return NextResponse.json(
+        { error: "Naskah tidak ditemukan" },
+        { status: 404 }
       );
     }
 
@@ -26,15 +54,14 @@ export async function POST(req: Request) {
           manuscriptId,
           pageNumber: i + 1,
           imageUrl: f.path,
-          width: f.w || 1000,
-          height: f.h || 1400,
+          width: f.w,
+          height: f.h,
         },
       });
     }
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
