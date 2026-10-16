@@ -6,9 +6,9 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title:
-    "LONTAR — Literasi Online, Naskah Transliterasi, dan Alih-bahasa untuk Riset",
+    "LONTAR — Literasi Online Naskah Transliterasi dan Alih-bahasa untuk Riset",
   description:
-    "Platform open-source untuk transliterasi dan terjemahan naskah kuno beraksara Pegon dan Hanacaraka.",
+    "LONTAR merupakan platform ekosistem manuskrip digital berbasis Interlinear Glossed Text (IGT) tersinkronisasi spasial dengan Crowdsourcing melalui kolaborasi kontributor terverifikasi yang diorientasikan khusus untuk manuskrip Nusantara",
 };
 
 export default function RootLayout({

@@ -96,7 +96,7 @@ export default async function HomePage() {
               <span className="font-semibold text-white">LONTAR</span> adalah
               akronim dari{" "}
               <span className="font-medium text-white">L</span>iterasi{" "}
-              <span className="font-medium text-white">O</span>nline,{" "}
+              <span className="font-medium text-white">O</span>nline{" "}
               <span className="font-medium text-white">N</span>askah{" "}
               <span className="font-medium text-white">T</span>ransliterasi,
               dan{" "}
@@ -104,9 +104,7 @@ export default async function HomePage() {
               untuk <span className="font-medium text-white">R</span>iset.
             </p>
             <p className="text-sky-100 text-base md:text-lg leading-relaxed">
-              Platform literasi digital untuk penelitian naskah kuno berbagai
-              aksara Nusantara dikerjakan secara kolaboratif oleh
-              kontributor terverifikasi.
+              LONTAR merupakan platform ekosistem manuskrip digital berbasis Interlinear Glossed Text (IGT) tersinkronisasi spasial dengan Crowdsourcing melalui kolaborasi kontributor terverifikasi yang diorientasikan khusus untuk manuskrip Nusantara
             </p>
           </div>
 
@@ -161,7 +159,7 @@ export default async function HomePage() {
       <section className="max-w-6xl mx-auto px-6 -mt-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
-            href="#koleksi"
+            href="/naskah"
             className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
           >
             <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
@@ -170,9 +168,12 @@ export default async function HomePage() {
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider break-words">
               Total Naskah
             </p>
+            <p className="text-[10px] text-teal-600 font-medium mt-1.5 opacity-0 group-hover:opacity-100 transition">
+              Lihat semua →
+            </p>
           </Link>
           <Link
-            href="#koleksi"
+            href="/transliterasi"
             className="bg-white rounded-xl shadow-lg border border-sky-100 p-6 text-center hover:border-teal-400 hover:shadow-xl transition-all cursor-pointer group"
           >
             <p className="text-3xl md:text-4xl font-bold text-blue-900 group-hover:text-teal-700 transition">
@@ -180,6 +181,9 @@ export default async function HomePage() {
             </p>
             <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider break-words">
               Naskah Ditransliterasi
+            </p>
+            <p className="text-[10px] text-teal-600 font-medium mt-1.5 opacity-0 group-hover:opacity-100 transition">
+              Lihat semua →
             </p>
           </Link>
           <Link
@@ -289,8 +293,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Platform ini mengandalkan metode manual oleh manusia karena
-              teknologi OCR/AI belum akurat untuk naskah kuno.
+              Platform ini mengandalkan metode crowdsourcing melalui kolaborasi kontributor terverifikasi guna menjaga akurasi interlinear glosa yang disajikan.
             </p>
           </div>
 

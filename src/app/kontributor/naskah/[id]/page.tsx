@@ -175,7 +175,9 @@ export default async function WorkPage({
           />
         )}
 
+        {/* FIX: key={currentPage.id} → state WorkArea reset saat ganti halaman */}
         <WorkArea
+          key={currentPage.id}
           pageId={currentPage.id}
           imageUrl={imageUrl}
           imageWidth={currentPage.width}
@@ -200,3 +202,4 @@ export default async function WorkPage({
     </div>
   );
 }
+

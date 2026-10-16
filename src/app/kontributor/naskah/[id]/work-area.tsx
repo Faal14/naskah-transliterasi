@@ -17,6 +17,25 @@ type Annotation = {
   status: string;
 };
 
+function buildFromAnnotations(annotations: Annotation[]) {
+  const approved = annotations.filter((a) => a.status !== "REJECTED");
+
+  const sorted = [...approved].sort((a, b) => {
+    if (Math.abs(a.y - b.y) > 0.02) return a.y - b.y;
+    return a.x - b.x;
+  });
+
+  const translit = sorted.map((a) => a.transliteration).join(" ");
+  const translation = sorted.map((a) => a.translation).join(" ");
+
+  const notesList = sorted
+    .filter((a) => a.notes && a.notes.trim())
+    .map((a) => `• ${a.notes}`)
+    .join("\n");
+
+  return { translit, translation, notes: notesList };
+}
+
 export default function WorkArea({
   pageId,
   imageUrl,
@@ -36,9 +55,24 @@ export default function WorkArea({
   initialTranslation: string;
   initialApparatus: string;
 }) {
-  const [fullTranslit, setFullTranslit] = useState(initialTransliteration);
-  const [fullTranslation, setFullTranslation] = useState(initialTranslation);
-  const [fullApparatus, setFullApparatus] = useState(initialApparatus);
+  const shouldAutoPopulate =
+    initialAnnotations.length > 0 &&
+    !initialTransliteration.trim() &&
+    !initialTranslation.trim();
+
+  const built = shouldAutoPopulate
+    ? buildFromAnnotations(initialAnnotations)
+    : null;
+
+  const [fullTranslit, setFullTranslit] = useState(
+    built ? built.translit : initialTransliteration
+  );
+  const [fullTranslation, setFullTranslation] = useState(
+    built ? built.translation : initialTranslation
+  );
+  const [fullApparatus, setFullApparatus] = useState(
+    built && !initialApparatus.trim() ? built.notes : initialApparatus
+  );
 
   function handleAnnotationCreated(ann: {
     transliteration: string;
@@ -63,6 +97,13 @@ export default function WorkArea({
     }
   }
 
+  function handleRegenerate() {
+    const rebuilt = buildFromAnnotations(initialAnnotations);
+    setFullTranslit(rebuilt.translit);
+    setFullTranslation(rebuilt.translation);
+    setFullApparatus(rebuilt.notes);
+  }
+
   return (
     <>
       <AnnotationCanvas
@@ -82,6 +123,10 @@ export default function WorkArea({
         onTranslationChange={setFullTranslation}
         apparatusValue={fullApparatus}
         onApparatusChange={setFullApparatus}
+        onRegenerate={handleRegenerate}
+        savedTransliteration={initialTransliteration}
+        savedTranslation={initialTranslation}
+        savedApparatus={initialApparatus}
       />
     </>
   );

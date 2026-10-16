@@ -133,7 +133,24 @@ export async function saveFullText(
   fullTranslation: string,
   fullApparatus: string
 ) {
-  await checkAuth();
+  const user = await checkAuth();
+
+  const page = await prisma.page.findUnique({
+    where: { id: pageId },
+    select: {
+      id: true,
+      manuscript: { select: { lockedById: true } },
+    },
+  });
+  if (!page || !page.manuscript) {
+    throw new Error("Halaman tidak ditemukan");
+  }
+
+  const isAdmin = user.role === "ADMIN";
+  const isOwner = page.manuscript.lockedById === user.id;
+  if (!isAdmin && !isOwner) {
+    throw new Error("Anda tidak berhak mengubah paragraf halaman ini");
+  }
 
   await prisma.page.update({
     where: { id: pageId },
@@ -148,10 +165,6 @@ export async function saveFullText(
   revalidatePath(`/naskah`);
   return { success: true };
 }
-
-// ============ Update Metadata Naskah ============
-
-const optionalStr = z.string().trim().max(5000).optional();
 
 const metadataSchema = z.object({
   title: z.string().trim().max(500).optional(),
@@ -190,7 +203,6 @@ export async function updateManuscriptMetadata(
     throw new Error("Aksara wajib diisi");
   }
 
-  // FIX: cek naskah & otorisasi
   const manuscript = await prisma.manuscript.findUnique({
     where: { id: manuscriptId },
     select: { lockedById: true },
