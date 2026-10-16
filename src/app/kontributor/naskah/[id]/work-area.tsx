@@ -124,6 +124,9 @@ export default function WorkArea({
         apparatusValue={fullApparatus}
         onApparatusChange={setFullApparatus}
         onRegenerate={handleRegenerate}
+        savedTransliteration={initialTransliteration}
+        savedTranslation={initialTranslation}
+        savedApparatus={initialApparatus}
       />
     </>
   );

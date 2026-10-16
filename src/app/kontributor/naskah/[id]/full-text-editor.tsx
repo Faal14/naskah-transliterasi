@@ -13,6 +13,9 @@ export default function FullTextEditor({
   apparatusValue,
   onApparatusChange,
   onRegenerate,
+  savedTransliteration,
+  savedTranslation,
+  savedApparatus,
 }: {
   pageId: string;
   value: string;
@@ -22,14 +25,17 @@ export default function FullTextEditor({
   apparatusValue: string;
   onApparatusChange: (v: string) => void;
   onRegenerate?: () => void;
+  savedTransliteration: string;
+  savedTranslation: string;
+  savedApparatus: string;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [lastSaved, setLastSaved] = useState({
-    translit: value,
-    translation: translationValue,
-    apparatus: apparatusValue,
+    translit: savedTransliteration,
+    translation: savedTranslation,
+    apparatus: savedApparatus,
   });
 
   const isDirty =
