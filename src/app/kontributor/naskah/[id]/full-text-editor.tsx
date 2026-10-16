@@ -12,6 +12,7 @@ export default function FullTextEditor({
   onTranslationChange,
   apparatusValue,
   onApparatusChange,
+  onRegenerate,
 }: {
   pageId: string;
   value: string;
@@ -20,6 +21,7 @@ export default function FullTextEditor({
   onTranslationChange: (v: string) => void;
   apparatusValue: string;
   onApparatusChange: (v: string) => void;
+  onRegenerate?: () => void;
 }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -49,11 +51,24 @@ export default function FullTextEditor({
       setMessage("✅ Paragraf utuh tersimpan");
       router.refresh();
       setTimeout(() => setMessage(""), 3000);
-    } catch (err: any) {
-      setMessage("❌ " + (err.message || "Gagal menyimpan"));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan";
+      setMessage("❌ " + msg);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleRegenerateClick() {
+    if (!onRegenerate) return;
+    if (
+      !confirm(
+        "Bangun ulang paragraf dari SEMUA anotasi? Perubahan manual yang belum disimpan akan hilang."
+      )
+    ) {
+      return;
+    }
+    onRegenerate();
   }
 
   return (
@@ -63,9 +78,21 @@ export default function FullTextEditor({
           <div className="w-1 h-5 bg-teal-500 rounded"></div>
           <h3 className="font-bold text-blue-900">📝 Paragraf Utuh</h3>
         </div>
-        <p className="text-xs text-slate-500">
-          Otomatis terisi dari anotasi. Bisa diedit manual.
-        </p>
+        <div className="flex items-center gap-2">
+          {onRegenerate && (
+            <button
+              type="button"
+              onClick={handleRegenerateClick}
+              className="text-xs text-teal-700 hover:text-teal-900 hover:underline font-medium"
+              title="Bangun ulang paragraf dari semua anotasi (untuk fix data lama)"
+            >
+              🔄 Sinkron dari Anotasi
+            </button>
+          )}
+          <p className="text-xs text-slate-500">
+            Otomatis terisi dari anotasi. Bisa diedit manual.
+          </p>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">

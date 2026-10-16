@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AnnotationCanvas from "@/components/annotation-canvas";
 import FullTextEditor from "./full-text-editor";
 
@@ -16,6 +16,23 @@ type Annotation = {
   pegonText: string | null;
   status: string;
 };
+
+function buildFromAnnotations(annotations: Annotation[]) {
+  const sorted = [...annotations].sort((a, b) => {
+    if (Math.abs(a.y - b.y) > 0.02) return a.y - b.y;
+    return a.x - b.x;
+  });
+
+  const translit = sorted.map((a) => a.transliteration).join(" ");
+  const translation = sorted.map((a) => a.translation).join(" ");
+
+  const notesList = sorted
+    .filter((a) => a.notes && a.notes.trim())
+    .map((a) => `• ${a.notes}`)
+    .join("\n");
+
+  return { translit, translation, notes: notesList };
+}
 
 export default function WorkArea({
   pageId,
@@ -40,6 +57,22 @@ export default function WorkArea({
   const [fullTranslation, setFullTranslation] = useState(initialTranslation);
   const [fullApparatus, setFullApparatus] = useState(initialApparatus);
 
+  useEffect(() => {
+    if (
+      initialAnnotations.length > 0 &&
+      !initialTransliteration.trim() &&
+      !initialTranslation.trim()
+    ) {
+      const built = buildFromAnnotations(initialAnnotations);
+      setFullTranslit(built.translit);
+      setFullTranslation(built.translation);
+      if (!initialApparatus.trim() && built.notes) {
+        setFullApparatus(built.notes);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageId]);
+
   function handleAnnotationCreated(ann: {
     transliteration: string;
     translation: string;
@@ -63,6 +96,13 @@ export default function WorkArea({
     }
   }
 
+  function handleRegenerate() {
+    const built = buildFromAnnotations(initialAnnotations);
+    setFullTranslit(built.translit);
+    setFullTranslation(built.translation);
+    setFullApparatus(built.notes);
+  }
+
   return (
     <>
       <AnnotationCanvas
@@ -82,6 +122,7 @@ export default function WorkArea({
         onTranslationChange={setFullTranslation}
         apparatusValue={fullApparatus}
         onApparatusChange={setFullApparatus}
+        onRegenerate={handleRegenerate}
       />
     </>
   );

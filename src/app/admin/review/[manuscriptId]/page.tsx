@@ -154,7 +154,9 @@ export default async function ReviewManuscriptPage({
         </div>
       </div>
 
+      {/* FIX: key={currentPage.id} → state ReviewCanvas reset saat ganti halaman */}
       <ReviewCanvas
+        key={currentPage.id}
         pageId={currentPage.id}
         imageUrl={imageUrl}
         initialAnnotations={annotations}

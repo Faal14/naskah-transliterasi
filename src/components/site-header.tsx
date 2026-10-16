@@ -10,16 +10,16 @@ export default async function SiteHeader() {
 
   return (
     <header className="bg-blue-900 shadow-lg sticky top-0 z-30">
-      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex items-center justify-between gap-3">
+      <div className="w-full px-4 md:px-6 py-4 flex items-center justify-between gap-3">
         
         {/* --- BAGIAN KIRI: Logo Baru + Brand --- */}
         <Link href="/" className="flex items-center gap-2 md:gap-3 min-w-0">
           
-          {/* Logo Utama LONTAR */}
+          {/* Logo Utama LONTAR (extra besar) */}
           <img 
             src={withBasePath("/logos/logo.png")} 
             alt="Logo LONTAR" 
-            className="h-10 w-auto object-contain drop-shadow-md shrink-0" 
+            className="h-16 w-auto object-contain drop-shadow-md shrink-0" 
           />
           
           {/* Teks Brand */}
@@ -28,7 +28,7 @@ export default async function SiteHeader() {
               LONTAR
             </p>
             <p className="hidden sm:block text-[10px] text-sky-200 leading-tight whitespace-nowrap">
-              Platform Preservasi &amp; Digital Heritage Manuskrip
+              Literasi Online Naskah Transliterasi, dan Alih-bahasa untuk Riset.
             </p>
           </div>
         </Link>
