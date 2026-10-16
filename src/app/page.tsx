@@ -293,7 +293,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              Platform ini mengandalkan metode crowdsourcing melalui kolaborasi kontributor terverifikasi guna menjaga akurasi interliner glosa yang disajikan.
+              Platform ini mengandalkan metode crowdsourcing melalui kolaborasi kontributor terverifikasi guna menjaga akurasi interlinear glosa yang disajikan.
             </p>
           </div>
 

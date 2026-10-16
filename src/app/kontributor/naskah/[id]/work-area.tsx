@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import AnnotationCanvas from "@/components/annotation-canvas";
 import FullTextEditor from "./full-text-editor";
 
@@ -18,7 +18,9 @@ type Annotation = {
 };
 
 function buildFromAnnotations(annotations: Annotation[]) {
-  const sorted = [...annotations].sort((a, b) => {
+  const approved = annotations.filter((a) => a.status !== "REJECTED");
+
+  const sorted = [...approved].sort((a, b) => {
     if (Math.abs(a.y - b.y) > 0.02) return a.y - b.y;
     return a.x - b.x;
   });
@@ -53,25 +55,24 @@ export default function WorkArea({
   initialTranslation: string;
   initialApparatus: string;
 }) {
-  const [fullTranslit, setFullTranslit] = useState(initialTransliteration);
-  const [fullTranslation, setFullTranslation] = useState(initialTranslation);
-  const [fullApparatus, setFullApparatus] = useState(initialApparatus);
+  const shouldAutoPopulate =
+    initialAnnotations.length > 0 &&
+    !initialTransliteration.trim() &&
+    !initialTranslation.trim();
 
-  useEffect(() => {
-    if (
-      initialAnnotations.length > 0 &&
-      !initialTransliteration.trim() &&
-      !initialTranslation.trim()
-    ) {
-      const built = buildFromAnnotations(initialAnnotations);
-      setFullTranslit(built.translit);
-      setFullTranslation(built.translation);
-      if (!initialApparatus.trim() && built.notes) {
-        setFullApparatus(built.notes);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageId]);
+  const built = shouldAutoPopulate
+    ? buildFromAnnotations(initialAnnotations)
+    : null;
+
+  const [fullTranslit, setFullTranslit] = useState(
+    built ? built.translit : initialTransliteration
+  );
+  const [fullTranslation, setFullTranslation] = useState(
+    built ? built.translation : initialTranslation
+  );
+  const [fullApparatus, setFullApparatus] = useState(
+    built && !initialApparatus.trim() ? built.notes : initialApparatus
+  );
 
   function handleAnnotationCreated(ann: {
     transliteration: string;
@@ -97,10 +98,10 @@ export default function WorkArea({
   }
 
   function handleRegenerate() {
-    const built = buildFromAnnotations(initialAnnotations);
-    setFullTranslit(built.translit);
-    setFullTranslation(built.translation);
-    setFullApparatus(built.notes);
+    const rebuilt = buildFromAnnotations(initialAnnotations);
+    setFullTranslit(rebuilt.translit);
+    setFullTranslation(rebuilt.translation);
+    setFullApparatus(rebuilt.notes);
   }
 
   return (

@@ -41,7 +41,7 @@ export default async function AllManuscriptsPage() {
     }
   }
 
-  const items = manuscripts.map((m) => {
+  const allItems = manuscripts.map((m) => {
     const totalApproved = m.pages.reduce(
       (sum, p) => sum + p.annotations.length,
       0
@@ -64,6 +64,8 @@ export default async function AllManuscriptsPage() {
     };
   });
 
+  const items = allItems.filter((m) => m.stats.totalApproved > 0);
+
   return (
     <div className="min-h-screen bg-sky-50">
       <SiteHeader />
@@ -83,8 +85,7 @@ export default async function AllManuscriptsPage() {
             </h1>
           </div>
           <p className="text-slate-600 max-w-2xl">
-            {items.length} naskah dalam koleksi — sudah ditransliterasi maupun
-            yang masih menunggu dikerjakan.
+            {items.length} naskah yang sudah ditransliterasi dan siap dibaca.
           </p>
         </div>
 
@@ -92,7 +93,7 @@ export default async function AllManuscriptsPage() {
           <div className="bg-white rounded-2xl border border-sky-100 p-16 text-center shadow-sm">
             <div className="text-5xl mb-4">📖</div>
             <p className="text-slate-600 mb-2 font-medium">
-              Belum ada naskah dalam koleksi.
+              Belum ada naskah yang siap dibaca publik.
             </p>
           </div>
         ) : (
